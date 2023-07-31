@@ -72,10 +72,11 @@ class Application:
     def set_column(self, dropdown, value):
         if dropdown == self.dropdown1:
             self.column1 = value
+            self.load_button1.config(text=f"Spreadsheet 1: {value}", bg="blue")
         elif dropdown == self.dropdown2:
             self.column2 = value
-        if self.spreadsheet1 is not None and self.spreadsheet2 is not None and self.column1 is not None and self.column2 is not None:
-            self.match_button.config(state=NORMAL)
+            self.load_button2.config(text=f"Spreadsheet 2: {value}", bg="blue")
+        self.check_if_match_possible()
 
     def update_dropdown(self, dropdown, options):
         dropdown['menu'].delete(0, 'end')
