@@ -134,31 +134,21 @@ class Application:
             match_data(self, s1, s2, self.progressbar)
             self.match_button.config(bg='blue')
             self.save_button.config(state=NORMAL)
-        else:
-            messagebox.showerror("Error", "Please load both spreadsheets and select columns before matching data.")
+            self.next_button.config(state=NORMAL)
 
     def next_item(self):
-        if self.matches and self.next_item_index < len(self.matches):
-            for widget in self.match_frame.winfo_children():
-                widget.destroy()
-                
-            item, matches = self.matches[self.next_item_index]
-            self.match_frame.pack_forget()
-            
-            Label(self.match_frame, text=f"Matches for '{item[1]}':").pack()
-            
-            self.selections[item] = []
-            
-            for match in matches:
-                var = StringVar()
-                Checkbutton(self.match_frame, text=str(match[0][1]), variable=var, onvalue=match[0], offvalue="").pack()
-                self.selections[item].append(var)
-
+        if self.next_item_index < len(self.matches):
+            current_item = self.matches[self.next_item_index]
+            self.selections[current_item[0]] = []
+            Label(self.match_frame, text=current_item[0][1]).pack()
+            for match in current_item[1]:
+                match_var = StringVar()
+                match_var.set((match[0][0], match[0][1]))
+                Checkbutton(self.match_frame, text=f"{match[0][1]} ({match[1]})", variable=match_var, onvalue=(match[0][0], match[0][1]), offvalue="").pack()
+                self.selections[current_item[0]].append(match_var)
             self.next_item_index += 1
-            self.next_button.config(state=NORMAL if self.next_item_index < len(self.matches) else DISABLED)
-            self.match_frame.pack(fill='both', expand=True)
         else:
-            messagebox.showinfo("Done", "All matches have been shown.")
+            messagebox.showinfo("Done", "All matches have been reviewed.")
 
     def check_if_match_possible(self):
         if self.spreadsheet1 is not None and self.spreadsheet2 is not None and self.column1 is not None and self.column2 is not None:
