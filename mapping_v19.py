@@ -27,14 +27,20 @@ def load_spreadsheet(application, spreadsheet_number):
             
 def prepare_match_data(application, df1, df2, column1, column2, progressbar, threshold=70):
     s1 = df1[column1].values
-    s2 = df2[column2].values
+    s2_with_indices = [(i, elem) for i, elem in enumerate(df2[column2])]
     length = len(s1)
     progressbar["maximum"] = length
     application.matches = []  # Create a list to store all matches
     for i in tqdm(range(length), desc="Matching..."):
-        matches = process.extract(s1[i], s2, scorer=fuzz.token_sort_ratio, limit=None)
-        good_matches = [(idx, match[0], match[1]) for idx, match in enumerate(matches) if match[1] >= threshold]
-        application.matches.append((df1.index[i], df1.iloc[i], good_matches))
+        matches = process.extract(s1[i], s2_with_indices, scorer=fuzz.token_sort_ratio, limit=None)
+        print('ITEM s1i')
+        print(s1[i])
+        print('-----------')
+        good_matches = [(match[0][0], match[0][1], match[1]) for match in matches if match[1] >= threshold]
+        print('GOOD MATCHES')
+        print(good_matches)
+        print('-----------')
+        application.matches.append((df1.iloc[i], good_matches))
         progressbar["value"] = i
         progressbar.update()
     application.next_item_index = 0  # Initialize index for "Next Item" button
@@ -113,40 +119,12 @@ class Application:
         self.refresh_button = Button(master, text="Reset", command=self.refresh)
         self.refresh_button.pack(fill='x')
 
-        merge_button = Button(root, text="Merge Data", command=self.merge_data)
-        merge_button.pack()
-
         self.match_frame = Frame(master)  # Container for match widgets
         self.match_frame.pack(fill='both', expand=True)
 
         self.matches = []
         self.next_item_index = 0
         self.selections = {}
-
-    def merge_data(self):
-        # create an empty dictionary to store matched pairs
-        matches = {}
-        for key, vars in self.selections.items():
-            matches[key] = [v.get() for v in vars if v.get() != '']
-
-        # create empty DataFrame for merge
-        merged_df = pd.DataFrame()
-
-        for df1_index, df2_indices in matches.items():
-            for df2_index in df2_indices:
-                # merge rows based on the index
-                merged_row = pd.merge(self.spreadsheet1.loc[[df1_index]], self.spreadsheet2.loc[[int(df2_index)]], 
-                                    left_index=True, right_index=True, how='outer')
-                # append merged rows to the merged_df DataFrame
-                merged_df = pd.concat([merged_df, merged_row])
-
-        # save the merged data to a csv file
-        merged_df.to_csv('merged.csv', index=False)
-
-        # display a message box to show success
-        messagebox.showinfo("Success", "Data merged and saved to 'merged.csv'.")
-
-
     
     def close_app(self):
         self.master.destroy()
@@ -223,27 +201,26 @@ class Application:
             # Clear the match_frame
             for widget in self.match_frame.winfo_children():
                 widget.destroy()
-
-            index1, row, matches = self.matches[self.next_item_index]
+                
+            row, matches = self.matches[self.next_item_index]
             self.match_frame.pack_forget()
 
             Label(self.match_frame, text=f"Matches for row:\n{row.to_string()}").pack()
 
             # Create a list to store the StringVar objects for this item
-            self.selections[index1] = []
-
+            self.selections[row[self.column1]] = []
+            
             for match in matches:
-                idx2, match_str, score = match
                 var = StringVar()
-                Checkbutton(self.match_frame, text=f"{match_str} ({score})", variable=var, onvalue=str(idx2), offvalue="").pack()
-                self.selections[index1].append(var)
+                Checkbutton(self.match_frame, text=str(match), variable=var, onvalue=str(match), offvalue="").pack()
+                self.selections[row[self.column1]].append(var)
 
             self.next_item_index += 1  # Prepare for the next click of the "Next Item" button
             self.next_button.config(state=NORMAL if self.next_item_index < len(self.matches) else DISABLED)
 
             self.progressbar["value"] = self.next_item_index
             self.progressbar.update()
-
+            
             self.match_frame.pack(fill='both', expand=True)
 
         else:
