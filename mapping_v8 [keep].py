@@ -36,44 +36,24 @@ def match_data(application, s1, s2, progressbar, threshold=70):
     application.next_item()  # Display the first item
 
 def save_selections(application):
-    print(application.selections)
+    # Extract the selections from the checkbox items
+    selected_matches = []
+    for key, value in application.selections.items():
+        s1_match = key
+        for var in value:
+            s2_match = var.get()
+            if s2_match:
+                selected_matches.append((s1_match, s2_match))
 
-    # Print the state of each checkbox variable
-    for key, value_list in application.selections.items():
-        values = [var.get() for var in value_list]
-        print(f"{key}: {values}")
-    
-    try:
-        # Extract the selections from the checkbox items
-        selected_matches = []
-        for key, value in application.selections.items():
-            s1_match = key
-            for var in value:
-                s2_match = var.get() if var.get() != '' else None
-                if s2_match:  # Ensure the tuple is not empty
-                    selected_matches.append((s1_match, s2_match))
-       
-
-        # Save the selected matches to an Excel file
-        if selected_matches:
-            filename = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
-            if filename:
-                match_df = pd.DataFrame(selected_matches, columns=[application.column1, application.column2])
-                spreadsheet1_df = application.spreadsheet1.set_index(application.column1)
-                spreadsheet2_df = application.spreadsheet2.set_index(application.column2)
-                match_df.set_index(application.column1, inplace=True)
-                match_df = match_df.join(spreadsheet1_df, how='left', rsuffix='_1')
-                match_df.reset_index(inplace=True)
-                match_df.set_index(application.column2, inplace=True)
-                match_df = match_df.join(spreadsheet2_df, how='left', rsuffix='_2')
-                match_df.to_excel(filename, index=False)
-                messagebox.showinfo("Success", "Matches saved successfully.")
-        else:
-            messagebox.showerror("Error", "No matches to save.")
-    except Exception as e:
-        messagebox.showerror("Error", f"An error occurred: {str(e)}")
-
-
+    # Save the selected matches to an Excel file
+    if selected_matches:
+        filename = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+        if filename:
+            match_df = pd.DataFrame(selected_matches, columns=['Name1', 'Name2'])
+            match_df.to_excel(filename, index=False)
+            messagebox.showinfo("Success", "Matches saved successfully.")
+    else:
+        messagebox.showerror("Error", "No matches to save.")
 
   
 class Application:
@@ -143,6 +123,7 @@ class Application:
         elif dropdown == self.dropdown2:
             self.column2 = value
             self.load_button2.config(text=f"Spreadsheet 2: {value}", bg="blue")
+        
 
     def update_dropdown(self, dropdown, options, column_button):
         dropdown['menu'].delete(0, 'end')
@@ -157,7 +138,7 @@ class Application:
         elif dropdown == self.dropdown2:
             self.column2 = value
             column_button.config(text=f"Spreadsheet 2: {value}", bg="blue")
-        self.check_if_match_possible()
+        
 
     def match_data(self):
         if self.spreadsheet1 is not None and self.spreadsheet2 is not None and self.column1 is not None and self.column2 is not None:
