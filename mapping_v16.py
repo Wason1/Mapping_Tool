@@ -13,6 +13,7 @@ def load_spreadsheet(application, spreadsheet_number):
         if spreadsheet_number == 1:
             df_1 = pd.read_excel(filename)
             print(f'Spreadsheet {spreadsheet_number} loaded with shape {df_1.shape}')
+            print(df_1)
             application.spreadsheet1 = df_1
             application.update_dropdown(application.dropdown1, df_1.columns)
             application.load_button1.config(bg='blue')
@@ -20,6 +21,7 @@ def load_spreadsheet(application, spreadsheet_number):
         elif spreadsheet_number == 2:
             df_2 = pd.read_excel(filename)
             print(f'Spreadsheet {spreadsheet_number} loaded with shape {df_2.shape}')
+            print(df_2)
             application.spreadsheet2 = df_2
             application.update_dropdown(application.dropdown2, df_2.columns)
             application.load_button2.config(bg='blue')
@@ -31,12 +33,33 @@ def match_data(application, s1, s2, progressbar, threshold=70):
     application.matches = []  # Create a list to store all matches
     for i in tqdm(range(length), desc="Matching..."):
         matches = process.extract(s1[i], s2, scorer=fuzz.token_sort_ratio, limit=None)
+        print (matches)
+        #good_matches = [(j, match[1]) for j, match in enumerate(matches) if match[1] >= threshold]
         good_matches = [match for match in matches if match[1] >= threshold]
         application.matches.append((s1[i], good_matches))
+        print(good_matches)
+        application.matches.append((i, good_matches))  # Here we store the index i instead of s1[i]
         progressbar["value"] = i
         progressbar.update()
     application.next_item_index = 0  # Initialize index for "Next Item" button
     application.next_item()  # Display the first item
+
+
+def join_dataframes_on_indexes(df1, df2, match_list):
+    df_joined = pd.DataFrame()
+
+    for match in match_list:
+        temp_df1 = df1.iloc[[match[0]]]
+        temp_df2 = df2.iloc[[match[1]]]
+
+        temp_df1 = temp_df1.reset_index()
+        temp_df2 = temp_df2.reset_index()
+
+        temp_joined = pd.concat([temp_df1, temp_df2], axis=1)
+        df_joined = pd.concat([df_joined, temp_joined])
+
+    return df_joined.reset_index(drop=True)
+
 
 def save_selections(application):
     # Extract the selections from the checkbox items
@@ -46,13 +69,19 @@ def save_selections(application):
         for var in value:
             s2_match = var.get()
             if s2_match:
-                selected_matches.append((s1_match, s2_match))
+                s2_match_idx = int(s2_match.split(",")[0][1:])  # extract the index from the string and convert it to an integer
+                selected_matches.append((s1_match, s2_match_idx))
+    
+    print(selected_matches)
 
     # Save the selected matches to an Excel file
     if selected_matches:
         filename = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
         if filename:
-            match_df = pd.DataFrame(selected_matches, columns=['Name1', 'Name2'])
+            print(application.spreadsheet1)
+            print(application.spreadsheet2)
+            print(selected_matches)
+            match_df = join_dataframes_on_indexes(application.spreadsheet1, application.spreadsheet2, selected_matches)
             match_df.to_excel(filename, index=False)
             messagebox.showinfo("Success", "Matches saved successfully.")
             
@@ -65,6 +94,7 @@ def save_selections(application):
                 os.startfile(filename)
     else:
         messagebox.showerror("Error", "No matches to save.")
+
 
 class Application:
     def __init__(self, master):
@@ -130,7 +160,6 @@ class Application:
         self.matches = []
         self.next_item_index = 0
         self.selections = {}
-
         # Reset dropdowns
         self.variable1.set("Select column...")
         self.variable2.set("Select column...")
@@ -138,17 +167,14 @@ class Application:
         self.dropdown2.config(state=DISABLED, bg='SystemButtonFace')
         self.dropdown1['menu'].delete(0, 'end')
         self.dropdown2['menu'].delete(0, 'end')
-
         # Reset buttons
         self.load_button1.config(text="Load Spreadsheet 1", bg='green', state=NORMAL)
         self.load_button2.config(text="Load Spreadsheet 2", state=DISABLED, bg='SystemButtonFace')
         self.match_button.config(text="Match Data", state=DISABLED, bg='SystemButtonFace')
         self.next_button.config(text="Next Item", state=DISABLED, bg='SystemButtonFace')
         self.save_button.config(text="Save Matches", state=DISABLED, bg='SystemButtonFace')
-        
         # Reset progress bar
         self.progressbar["value"] = 0
-        
         # Clear the match_frame
         for widget in self.match_frame.winfo_children():
             widget.destroy()
@@ -169,12 +195,10 @@ class Application:
     def set_column(self, dropdown, value):
         if dropdown == self.dropdown1:
             self.column1 = value
-            #column_button.config(text=f"Spreadsheet 1: {value}", bg="blue")
             self.dropdown1.config(text=f"Spreadsheet 1: {value}", bg="blue")
             self.dropdown2.config(state=NORMAL, bg='green')
         elif dropdown == self.dropdown2:
             self.column2 = value
-            #column_button.config(text=f"Spreadsheet 2: {value}", bg="blue")
             self.dropdown2.config(text=f"Spreadsheet 2: {value}", bg="blue")
             self.match_button.config(state=NORMAL, bg='green')  # Enable "Match Data" button right after Spreadsheet 2 is loaded
         
@@ -185,20 +209,6 @@ class Application:
             self.save_button.config(state=NORMAL)  # Enable "Save Matches" button right after matching is complete
         else:
             messagebox.showerror("Error", "Please load both spreadsheets and select columns before matching data.")
-
-    def add_match(self, match):  # Add the match to the listbox instead of a dictionary
-        self.listbox.insert(END, str(match))
-
-    def save_matches(self):
-        matches = [self.listbox.get(idx) for idx in range(self.listbox.size())]  # Get all the matches from the listbox
-        if matches:
-            filename = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
-            if filename:
-                match_df = pd.DataFrame(matches, columns=["Match"])
-                match_df.to_excel(filename, index=False)
-                messagebox.showinfo("Success", "Matches saved successfully.")
-        else:
-            messagebox.showerror("Error", "No matches to save.")
     
     def next_item(self):
         if self.matches and self.next_item_index < len(self.matches):
@@ -208,18 +218,18 @@ class Application:
                 
             item, matches = self.matches[self.next_item_index]
             self.match_frame.pack_forget()
-            
-            Label(self.match_frame, text=f"Matches for '{item}':").pack()
-
+            # item is equivalent the index number on spreadsheet1
+            Label(self.match_frame, text=f"Matches for '{self.spreadsheet1.iloc[item]}':").pack()
             # Create a list to store the StringVar objects for this item
             self.selections[item] = []
             
             for match in matches:
+                print(str(match))
                 var = StringVar()
                 Checkbutton(self.match_frame, text=str(match), variable=var, onvalue=str(match), offvalue="").pack()
                 self.selections[item].append(var)
 
-            self.next_item_index += 1  # Prepare for the next click of the "Next Item" button
+            self.next_item_index += 1  # Prepare for the next click of the "Next Item" button loads the next index item to select matches for
             self.next_button.config(state=NORMAL if self.next_item_index < len(self.matches) else DISABLED)
 
             self.progressbar["value"] = self.next_item_index

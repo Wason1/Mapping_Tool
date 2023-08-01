@@ -13,6 +13,7 @@ def load_spreadsheet(application, spreadsheet_number):
         if spreadsheet_number == 1:
             df_1 = pd.read_excel(filename)
             print(f'Spreadsheet {spreadsheet_number} loaded with shape {df_1.shape}')
+            print(df_1)
             application.spreadsheet1 = df_1
             application.update_dropdown(application.dropdown1, df_1.columns)
             application.load_button1.config(bg='blue')
@@ -20,6 +21,7 @@ def load_spreadsheet(application, spreadsheet_number):
         elif spreadsheet_number == 2:
             df_2 = pd.read_excel(filename)
             print(f'Spreadsheet {spreadsheet_number} loaded with shape {df_2.shape}')
+            print(df_2)
             application.spreadsheet2 = df_2
             application.update_dropdown(application.dropdown2, df_2.columns)
             application.load_button2.config(bg='blue')
@@ -31,12 +33,29 @@ def match_data(application, s1, s2, progressbar, threshold=70):
     application.matches = []  # Create a list to store all matches
     for i in tqdm(range(length), desc="Matching..."):
         matches = process.extract(s1[i], s2, scorer=fuzz.token_sort_ratio, limit=None)
-        good_matches = [match for match in matches if match[1] >= threshold]
-        application.matches.append((s1[i], good_matches))
+        good_matches = [(i, match[1]) for i, match in enumerate(matches) if match[1] >= threshold]
+        application.matches.append((i, good_matches))  # Here we store the index i instead of s1[i]
         progressbar["value"] = i
         progressbar.update()
     application.next_item_index = 0  # Initialize index for "Next Item" button
     application.next_item()  # Display the first item
+
+
+def join_dataframes_on_indexes(df1, df2, match_list):
+    df_joined = pd.DataFrame()
+
+    for match in match_list:
+        temp_df1 = df1.iloc[[match[0]]]
+        temp_df2 = df2.iloc[[match[1]]]
+
+        temp_df1 = temp_df1.reset_index()
+        temp_df2 = temp_df2.reset_index()
+
+        temp_joined = pd.concat([temp_df1, temp_df2], axis=1)
+        df_joined = pd.concat([df_joined, temp_joined])
+
+    return df_joined.reset_index(drop=True)
+
 
 def save_selections(application):
     # Extract the selections from the checkbox items
@@ -46,13 +65,16 @@ def save_selections(application):
         for var in value:
             s2_match = var.get()
             if s2_match:
-                selected_matches.append((s1_match, s2_match))
+                s2_match_idx = int(s2_match.split(",")[0][1:])  # extract the index from the string and convert it to an integer
+                selected_matches.append((s1_match, s2_match_idx))
+    
+    print(selected_matches)
 
     # Save the selected matches to an Excel file
     if selected_matches:
         filename = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
         if filename:
-            match_df = pd.DataFrame(selected_matches, columns=['Name1', 'Name2'])
+            match_df = join_dataframes_on_indexes(application.spreadsheet1, application.spreadsheet2, selected_matches)
             match_df.to_excel(filename, index=False)
             messagebox.showinfo("Success", "Matches saved successfully.")
             
@@ -65,6 +87,7 @@ def save_selections(application):
                 os.startfile(filename)
     else:
         messagebox.showerror("Error", "No matches to save.")
+
 
 class Application:
     def __init__(self, master):
