@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import ast
 from fuzzywuzzy import fuzz, process
 from tkinter import Tk, filedialog, StringVar, END, messagebox, OptionMenu, Button, DISABLED, NORMAL, Listbox, Checkbutton, Label, Frame
 from tkinter.ttk import Progressbar
@@ -33,35 +34,65 @@ def prepare_match_data(application, df1, df2, column1, column2, progressbar, thr
     application.matches = []  # Create a list to store all matches
     for i in tqdm(range(length), desc="Matching..."):
         matches = process.extract(s1[i], s2_with_indices, scorer=fuzz.token_sort_ratio, limit=None)
-        print('ITEM s1i')
-        print(s1[i])
-        print('-----------')
+
+
         good_matches = [(match[0][0], match[0][1], match[1]) for match in matches if match[1] >= threshold]
-        print('GOOD MATCHES')
-        print(good_matches)
-        print('-----------')
+
         application.matches.append((df1.iloc[i], good_matches))
         progressbar["value"] = i
         progressbar.update()
     application.next_item_index = 0  # Initialize index for "Next Item" button
     application.next_item()  # Display the first item
 
-def save_selections(application):
+def save_selections(application, df1, df2):
     # Extract the selections from the checkbox items
     selected_matches = []
+    selected_index_matches = []
+    key_index_number = int(0)
     for key, value in application.selections.items():
         s1_match = key
         for var in value:
             s2_match = var.get()
             if s2_match:
+                s2_match_tuple = ast.literal_eval(s2_match)
+                s2_match_index = int(s2_match_tuple[0])
                 selected_matches.append((s1_match, s2_match))
+                selected_index_matches.append([key_index_number, s2_match_index])
+        key_index_number += 1
+
+    print("FINAL SELECTED MATCHES: ",selected_matches)
+    print("FINAL SELECTED INDEXES: ",selected_index_matches)
+
+
+    # Initialize empty DataFrame
+    df_joined = pd.DataFrame()
+
+    # Loop through the selected index matches
+    for i, j in selected_index_matches:
+        # Extract the corresponding rows
+        row_df1 = df1.iloc[[i]]
+        row_df2 = df2.iloc[[j]]
+
+        # Concatenate the rows
+        row_joined = pd.concat([row_df1, row_df2], axis=1)
+
+        # Append the result to df_joined
+        #df_joined = df_joined.append(row_joined)
+        df_joined = pd.concat([df_joined, row_joined], ignore_index=True)
+
+
+    # Assuming df1 and df2 have same column names
+    cols = pd.Series(df_joined.columns)
+    for dup in cols[cols.duplicated()].unique(): 
+        cols[cols[cols == dup].index.values.tolist()] = [dup + '_' + str(i) if i != 0 else dup for i in range(sum(cols == dup))]
+    df_joined.columns = cols
 
     # Save the selected matches to an Excel file
     if selected_matches:
         filename = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
         if filename:
             match_df = pd.DataFrame(selected_matches, columns=['Name1', 'Name2'])
-            match_df.to_excel(filename, index=False)
+            df_joined.to_excel(filename, index=False)
             messagebox.showinfo("Success", "Matches saved successfully.")
             
             # Use the subprocess module to open the file with the default application
@@ -107,7 +138,7 @@ class Application:
         self.next_button = Button(master, text="Next Item", command=self.next_item, state=DISABLED)
         self.next_button.pack(fill='x')
 
-        self.save_button = Button(master, text="Save Matches", command=lambda: save_selections(self), state=DISABLED)
+        self.save_button = Button(master, text="Save Matches", command=lambda: save_selections(self, self.spreadsheet1, self.spreadsheet2), state=DISABLED)
         self.save_button.pack(fill='x')
 
         self.close_button = Button(master, text="Close", command=self.close_app)
