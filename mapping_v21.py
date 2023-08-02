@@ -27,6 +27,8 @@ def load_spreadsheet(application, spreadsheet_number):
             application.dropdown1.config(state=NORMAL, bg='green')
             
 def prepare_match_data(application, df1, df2, column1, column2, progressbar, threshold=70):
+    df1 = df1.fillna("")
+    df2 = df2.fillna("")
     s1 = df1[column1].values
     s2_with_indices = [(i, elem) for i, elem in enumerate(df2[column2])]
     length = len(s1)
@@ -71,14 +73,18 @@ def save_selections(application, df1, df2):
     for i, j in selected_index_matches:
         # Extract the corresponding rows
         row_df1 = df1.iloc[[i]]
+        row_df1 = row_df1.reset_index(drop=True)
+        print(row_df1)
         row_df2 = df2.iloc[[j]]
-
+        row_df2 = row_df2.reset_index(drop=True)
+        print(row_df2)
         # Concatenate the rows
         row_joined = pd.concat([row_df1, row_df2], axis=1)
-
+        print(row_joined)
         # Append the result to df_joined
         #df_joined = df_joined.append(row_joined)
         df_joined = pd.concat([df_joined, row_joined], ignore_index=True)
+        print(df_joined)
 
 
     # Assuming df1 and df2 have same column names
