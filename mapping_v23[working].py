@@ -33,11 +33,8 @@ def prepare_match_data(application, df1, df2, column1, column2, progressbar, thr
     progressbar["maximum"] = length
     application.matches = []  # Create a list to store all matches
     for i in tqdm(range(length), desc="Matching..."):
-        matches = process.extract(s1[i], s2_with_indices, scorer=fuzz.token_sort_ratio, limit=None)
-
-
+        matches = process.extract(s1[i], s2_with_indices, scorer=fuzz.token_sort_ratio, limit=20)
         good_matches = [(match[0][0], match[0][1], match[1]) for match in matches if match[1] >= threshold]
-
         application.matches.append((df1.iloc[i], good_matches))
         progressbar["value"] = i
         progressbar.update()
