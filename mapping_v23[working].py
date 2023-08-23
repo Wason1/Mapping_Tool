@@ -26,7 +26,7 @@ def load_spreadsheet(application, spreadsheet_number):
             application.load_button2.config(bg='blue')
             application.dropdown1.config(state=NORMAL, bg='green')
             
-def prepare_match_data(application, df1, df2, column1, column2, progressbar, threshold=50):
+def prepare_match_data(application, df1, df2, column1, column2, progressbar, threshold=30):
     s1 = df1[column1].values
     s2_with_indices = [(i, elem) for i, elem in enumerate(df2[column2])]
     length = len(s1)
