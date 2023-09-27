@@ -96,23 +96,57 @@ class Application:
 
             
     def prepare_match_data(self, df1, df2, column1, column2, progressbar, threshold=30):
-        s1 = df1[column1].values
-        s2_with_indices = [(i, elem) for i, elem in enumerate(df2[column2])]
-        length = len(s1)
-        progressbar["maximum"] = length
-        self.matches = []  # Create a list to store all matches
-        for i in tqdm(range(length), desc="Matching..."):
-            matches = process.extract(s1[i], s2_with_indices, scorer=fuzz.token_sort_ratio, limit=20)
-            print('matches')
-            print(matches)
-            good_matches = [(match[0][0], match[0][1], match[1]) for match in matches if match[1] >= threshold]
-            print('good matches')
-            print (good_matches)
-            self.matches.append((df1.iloc[i], good_matches))
-            progressbar["value"] = i
-            progressbar.update()
-        self.next_item_index = 0  # Initialize index for "Next Item" button
-        self.next_item()  # Display the first item
+        self.df1 = df1  # store the dataframes for future reference
+        self.df2 = df2
+        self.column1 = column1
+        self.column2 = column2
+        self.threshold = threshold
+        self.progressbar = progressbar
+        
+        self.progressbar["maximum"] = len(self.df1)
+        self.matches = []  # Reset matches list
+        self.next_item_index = 0  # Reset index
+
+        # Process only the first item initially
+        self.next_item()
+
+    def match_data(self):
+        if self.spreadsheet1 is not None and self.spreadsheet2 is not None and self.column1 is not None and self.column2 is not None:
+            self.prepare_match_data(self.spreadsheet1, self.spreadsheet2, self.column1, self.column2, self.progressbar)
+            self.match_button.config(bg='blue', state=DISABLED)
+            self.save_button.config(state=NORMAL)  # Enable "Save Matches" button right after matching is complete
+        else:
+            messagebox.showerror("Error", "Please load both spreadsheets and select columns before matching data.")
+    
+    def next_item(self):
+        if self.matches and self.next_item_index < len(self.matches):
+            # Clear the match_frame
+            for widget in self.match_frame.winfo_children():
+                widget.destroy()
+                
+            row, matches = self.matches[self.next_item_index]
+            self.match_frame.pack_forget()
+
+            Label(self.match_frame, text=f"Matches for row:\n{row.to_string()}").pack()
+
+            # Create a list to store the StringVar objects for this item
+            self.selections[row[self.column1]] = []
+            
+            for match in matches:
+                var = StringVar()
+                Checkbutton(self.match_frame, text=str(match), variable=var, onvalue=str(match), offvalue="").pack()
+                self.selections[row[self.column1]].append(var)
+
+            self.next_item_index += 1  # Prepare for the next click of the "Next Item" button
+            self.next_button.config(state=NORMAL if self.next_item_index < len(self.matches) else DISABLED)
+
+            self.progressbar["value"] = self.next_item_index
+            self.progressbar.update()
+            
+            self.match_frame.pack(fill='both', expand=True)
+
+        else:
+            messagebox.showinfo("Info", "No more items to match.")
 
     def save_selections(self, df1, df2):
         # Extract the selections from the checkbox items
@@ -239,43 +273,7 @@ class Application:
             self.dropdown2.config(text=f"Spreadsheet 2: {value}", bg="blue")
             self.match_button.config(state=NORMAL, bg='green')  # Enable "Match Data" button right after Spreadsheet 2 is loaded
         
-    def match_data(self):
-        if self.spreadsheet1 is not None and self.spreadsheet2 is not None and self.column1 is not None and self.column2 is not None:
-            self.prepare_match_data(self.spreadsheet1, self.spreadsheet2, self.column1, self.column2, self.progressbar)
-            self.match_button.config(bg='blue', state=DISABLED)
-            self.save_button.config(state=NORMAL)  # Enable "Save Matches" button right after matching is complete
-        else:
-            messagebox.showerror("Error", "Please load both spreadsheets and select columns before matching data.")
-    
-    def next_item(self):
-        if self.matches and self.next_item_index < len(self.matches):
-            # Clear the match_frame
-            for widget in self.match_frame.winfo_children():
-                widget.destroy()
-                
-            row, matches = self.matches[self.next_item_index]
-            self.match_frame.pack_forget()
 
-            Label(self.match_frame, text=f"Matches for row:\n{row.to_string()}").pack()
-
-            # Create a list to store the StringVar objects for this item
-            self.selections[row[self.column1]] = []
-            
-            for match in matches:
-                var = StringVar()
-                Checkbutton(self.match_frame, text=str(match), variable=var, onvalue=str(match), offvalue="").pack()
-                self.selections[row[self.column1]].append(var)
-
-            self.next_item_index += 1  # Prepare for the next click of the "Next Item" button
-            self.next_button.config(state=NORMAL if self.next_item_index < len(self.matches) else DISABLED)
-
-            self.progressbar["value"] = self.next_item_index
-            self.progressbar.update()
-            
-            self.match_frame.pack(fill='both', expand=True)
-
-        else:
-            messagebox.showinfo("Info", "No more items to match.")
 
 
 root = Tk()
