@@ -8,7 +8,107 @@ from tqdm import tqdm
 import subprocess
 import sys
 
+def load_spreadsheet(application, spreadsheet_number):
+    filename = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
+    if filename:
+        if spreadsheet_number == 1:
+            df_1 = pd.read_excel(filename)
+            print(f'Spreadsheet {spreadsheet_number} loaded with shape {df_1.shape}')
+            application.spreadsheet1 = df_1
+            application.update_dropdown(application.dropdown1, df_1.columns)
+            application.load_button1.config(bg='blue')
+            application.load_button2.config(state=NORMAL, bg='green') # Enable "Load Spreadsheet 2" button right after Spreadsheet 1 is loaded
+        elif spreadsheet_number == 2:
+            df_2 = pd.read_excel(filename)
+            print(f'Spreadsheet {spreadsheet_number} loaded with shape {df_2.shape}')
+            application.spreadsheet2 = df_2
+            application.update_dropdown(application.dropdown2, df_2.columns)
+            application.load_button2.config(bg='blue')
+            application.dropdown1.config(state=NORMAL, bg='green')
+            
+def prepare_match_data(application, df1, df2, column1, column2, progressbar, threshold=30):
+    s1 = df1[column1].values
+    s2_with_indices = [(i, elem) for i, elem in enumerate(df2[column2])]
+    length = len(s1)
+    progressbar["maximum"] = length
+    application.matches = []  # Create a list to store all matches
+    for i in tqdm(range(length), desc="Matching..."):
+        matches = process.extract(s1[i], s2_with_indices, scorer=fuzz.token_sort_ratio, limit=20)
+        print('matches')
+        print(matches)
+        good_matches = [(match[0][0], match[0][1], match[1]) for match in matches if match[1] >= threshold]
+        print('good matches')
+        print (good_matches)
+        application.matches.append((df1.iloc[i], good_matches))
+        progressbar["value"] = i
+        progressbar.update()
+    application.next_item_index = 0  # Initialize index for "Next Item" button
+    application.next_item()  # Display the first item
 
+def save_selections(application, df1, df2):
+    # Extract the selections from the checkbox items
+    selected_matches = []
+    selected_index_matches = []
+    key_index_number = int(0)
+    for key, value in application.selections.items():
+        s1_match = key
+        for var in value:
+            s2_match = var.get()
+            if s2_match:
+                s2_match_tuple = ast.literal_eval(s2_match)
+                s2_match_index = int(s2_match_tuple[0])
+                selected_matches.append((s1_match, s2_match))
+                selected_index_matches.append([key_index_number, s2_match_index])
+        key_index_number += 1
+
+    print("FINAL SELECTED MATCHES: ",selected_matches)
+    print("FINAL SELECTED INDEXES: ",selected_index_matches)
+
+
+    # Initialize empty DataFrame
+    df_joined = pd.DataFrame()
+
+    # Loop through the selected index matches
+    for i, j in selected_index_matches:
+        # Extract the corresponding rows
+        row_df1 = df1.iloc[[i]]
+        row_df1 = row_df1.reset_index(drop=True)
+        print(row_df1)
+        row_df2 = df2.iloc[[j]]
+        row_df2 = row_df2.reset_index(drop=True)
+        print(row_df2)
+        # Concatenate the rows
+        row_joined = pd.concat([row_df1, row_df2], axis=1)
+        print(row_joined)
+        # Append the result to df_joined
+        #df_joined = df_joined.append(row_joined)
+        df_joined = pd.concat([df_joined, row_joined], ignore_index=True)
+        print(df_joined)
+
+
+    # Assuming df1 and df2 have same column names
+    cols = pd.Series(df_joined.columns)
+    for dup in cols[cols.duplicated()].unique(): 
+        cols[cols[cols == dup].index.values.tolist()] = [dup + '_' + str(i) if i != 0 else dup for i in range(sum(cols == dup))]
+    df_joined.columns = cols
+
+    # Save the selected matches to an Excel file
+    if selected_matches:
+        filename = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+        if filename:
+            match_df = pd.DataFrame(selected_matches, columns=['Name1', 'Name2'])
+            df_joined.to_excel(filename, index=False)
+            messagebox.showinfo("Success", "Matches saved successfully.")
+            
+            # Use the subprocess module to open the file with the default application
+            if sys.platform.startswith('darwin'):  # macOS
+                subprocess.call(('open', filename))
+            elif sys.platform.startswith('linux'):  # linux
+                subprocess.call(('xdg-open', filename))
+            else:  # windows
+                os.startfile(filename)
+    else:
+        messagebox.showerror("Error", "No matches to save.")
 
 class Application:
     def __init__(self, master):
@@ -19,10 +119,10 @@ class Application:
         self.column1 = None
         self.column2 = None
 
-        self.load_button1 = Button(master, text="Load Spreadsheet 1", command=lambda: self.load_spreadsheet(1), bg='green')
+        self.load_button1 = Button(master, text="Load Spreadsheet 1", command=lambda: load_spreadsheet(self, 1), bg='green')
         self.load_button1.pack(fill='x')
 
-        self.load_button2 = Button(master, text="Load Spreadsheet 2", command=lambda: self.load_spreadsheet(2), state=DISABLED)
+        self.load_button2 = Button(master, text="Load Spreadsheet 2", command=lambda: load_spreadsheet(self, 2), state=DISABLED)
         self.load_button2.pack(fill='x')
 
         self.variable1 = StringVar(master)
@@ -43,7 +143,7 @@ class Application:
         self.next_button = Button(master, text="Next Item", command=self.next_item, state=DISABLED)
         self.next_button.pack(fill='x')
 
-        self.save_button = Button(master, text="Save Matches", command=lambda: self.save_selections(self.spreadsheet1, self.spreadsheet2), state=DISABLED)
+        self.save_button = Button(master, text="Save Matches", command=lambda: save_selections(self, self.spreadsheet1, self.spreadsheet2), state=DISABLED)
         self.save_button.pack(fill='x')
 
         self.close_button = Button(master, text="Close", command=self.close_app)
@@ -61,113 +161,6 @@ class Application:
         self.matches = []
         self.next_item_index = 0
         self.selections = {}
-
-    def load_spreadsheet(self, spreadsheet_number):
-        filepath = filedialog.askopenfilename(title=f"Open Spreadsheet {spreadsheet_number}", filetypes=(("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")))
-        if filepath:
-            try:
-                if filepath.endswith('.csv'):
-                    df = pd.read_csv(filepath)
-                else:
-                    df = pd.read_excel(filepath)
-
-                if spreadsheet_number == 1:
-                    self.spreadsheet1 = df
-                    self.load_button1.config(bg="blue")
-                    self.update_dropdown(self.dropdown1, df.columns)
-                    self.dropdown1.config(state=NORMAL)
-                elif spreadsheet_number == 2:
-                    self.spreadsheet2 = df
-                    self.load_button2.config(bg="blue")
-                    self.update_dropdown(self.dropdown2, df.columns)
-                    self.dropdown2.config(state=NORMAL)
-            except Exception as e:
-                messagebox.showerror("Error", f"An error occurred while loading the file:\n{e}")
-
-            
-    def prepare_match_data(self, df1, df2, column1, column2, progressbar, threshold=30):
-        s1 = df1[column1].values
-        s2_with_indices = [(i, elem) for i, elem in enumerate(df2[column2])]
-        length = len(s1)
-        progressbar["maximum"] = length
-        self.matches = []  # Create a list to store all matches
-        for i in tqdm(range(length), desc="Matching..."):
-            matches = process.extract(s1[i], s2_with_indices, scorer=fuzz.token_sort_ratio, limit=20)
-            print('matches')
-            print(matches)
-            good_matches = [(match[0][0], match[0][1], match[1]) for match in matches if match[1] >= threshold]
-            print('good matches')
-            print (good_matches)
-            self.matches.append((df1.iloc[i], good_matches))
-            progressbar["value"] = i
-            progressbar.update()
-        self.next_item_index = 0  # Initialize index for "Next Item" button
-        self.next_item()  # Display the first item
-
-    def save_selections(self, df1, df2):
-        # Extract the selections from the checkbox items
-        selected_matches = []
-        selected_index_matches = []
-        key_index_number = int(0)
-        for key, value in self.selections.items():
-            s1_match = key
-            for var in value:
-                s2_match = var.get()
-                if s2_match:
-                    s2_match_tuple = ast.literal_eval(s2_match)
-                    s2_match_index = int(s2_match_tuple[0])
-                    selected_matches.append((s1_match, s2_match))
-                    selected_index_matches.append([key_index_number, s2_match_index])
-            key_index_number += 1
-
-        print("FINAL SELECTED MATCHES: ",selected_matches)
-        print("FINAL SELECTED INDEXES: ",selected_index_matches)
-
-
-        # Initialize empty DataFrame
-        df_joined = pd.DataFrame()
-
-        # Loop through the selected index matches
-        for i, j in selected_index_matches:
-            # Extract the corresponding rows
-            row_df1 = df1.iloc[[i]]
-            row_df1 = row_df1.reset_index(drop=True)
-            print(row_df1)
-            row_df2 = df2.iloc[[j]]
-            row_df2 = row_df2.reset_index(drop=True)
-            print(row_df2)
-            # Concatenate the rows
-            row_joined = pd.concat([row_df1, row_df2], axis=1)
-            print(row_joined)
-            # Append the result to df_joined
-            #df_joined = df_joined.append(row_joined)
-            df_joined = pd.concat([df_joined, row_joined], ignore_index=True)
-            print(df_joined)
-
-
-        # Assuming df1 and df2 have same column names
-        cols = pd.Series(df_joined.columns)
-        for dup in cols[cols.duplicated()].unique(): 
-            cols[cols[cols == dup].index.values.tolist()] = [dup + '_' + str(i) if i != 0 else dup for i in range(sum(cols == dup))]
-        df_joined.columns = cols
-
-        # Save the selected matches to an Excel file
-        if selected_matches:
-            filename = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
-            if filename:
-                match_df = pd.DataFrame(selected_matches, columns=['Name1', 'Name2'])
-                df_joined.to_excel(filename, index=False)
-                messagebox.showinfo("Success", "Matches saved successfully.")
-                
-                # Use the subprocess module to open the file with the default application
-                if sys.platform.startswith('darwin'):  # macOS
-                    subprocess.call(('open', filename))
-                elif sys.platform.startswith('linux'):  # linux
-                    subprocess.call(('xdg-open', filename))
-                else:  # windows
-                    os.startfile(filename)
-        else:
-            messagebox.showerror("Error", "No matches to save.")
     
     def close_app(self):
         self.master.destroy()
@@ -231,11 +224,13 @@ class Application:
         
     def match_data(self):
         if self.spreadsheet1 is not None and self.spreadsheet2 is not None and self.column1 is not None and self.column2 is not None:
-            self.prepare_match_data(self.spreadsheet1, self.spreadsheet2, self.column1, self.column2, self.progressbar)
+            prepare_match_data(self, self.spreadsheet1, self.spreadsheet2, self.column1, self.column2, self.progressbar)
             self.match_button.config(bg='blue', state=DISABLED)
             self.save_button.config(state=NORMAL)  # Enable "Save Matches" button right after matching is complete
         else:
             messagebox.showerror("Error", "Please load both spreadsheets and select columns before matching data.")
+
+
     
     def next_item(self):
         if self.matches and self.next_item_index < len(self.matches):

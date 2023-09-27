@@ -44,10 +44,11 @@ def main_matching():
     confirm_button.pack(pady=20)
 
 def load_dataframe():
-    file_path = filedialog.askopenfilename(title="Select a CSV file", filetypes=[("CSV files", "*.csv")])
+    file_path = filedialog.askopenfilename(title="Select an Excel file", filetypes=[("Excel files", "*.xlsx")])
     if file_path:
-        return pd.read_csv(file_path)
+        return pd.read_excel(file_path, engine='openpyxl')
     return None
+
 
 def load_data():
     global df1, df2
