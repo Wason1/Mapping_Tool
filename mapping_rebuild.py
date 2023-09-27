@@ -61,7 +61,7 @@ class Application:
         self.matches = []
         self.next_item_index = 0
         self.selections = {}
-
+        
     def load_spreadsheet(self, spreadsheet_number):
         filepath = filedialog.askopenfilename(title=f"Open Spreadsheet {spreadsheet_number}", filetypes=(("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")))
         if filepath:
@@ -118,31 +118,49 @@ class Application:
         else:
             messagebox.showerror("Error", "Please load both spreadsheets and select columns before matching data.")
     
+    def generate_match(self, index):
+        """Generate match for the item at the provided index."""
+        s1_item = self.df1[self.column1].iloc[index]
+        s2_with_indices = [(i, elem) for i, elem in enumerate(self.df2[self.column2])]
+        matches = process.extract(s1_item, s2_with_indices, scorer=fuzz.token_sort_ratio, limit=20)
+
+        good_matches = [pd.DataFrame({'Index': [match[0][0]], 
+                                      'Match': [match[0][1]], 
+                                      'Score': [match[1]]}) for match in matches if match[1] >= self.threshold]
+
+        self.matches.append((self.df1.iloc[index], pd.concat(good_matches, ignore_index=True)))
+        
+        # Update progress bar
+        self.progressbar["value"] = index + 1
+        self.progressbar.update()
+
     def next_item(self):
+        # Check if we need to generate the next match
+        if self.next_item_index >= len(self.matches) and self.next_item_index < len(self.df1):
+            self.generate_match(self.next_item_index)
+
         if self.matches and self.next_item_index < len(self.matches):
             # Clear the match_frame
             for widget in self.match_frame.winfo_children():
                 widget.destroy()
-                
-            row, matches = self.matches[self.next_item_index]
+
+            row, matches_df = self.matches[self.next_item_index]
             self.match_frame.pack_forget()
 
             Label(self.match_frame, text=f"Matches for row:\n{row.to_string()}").pack()
 
             # Create a list to store the StringVar objects for this item
             self.selections[row[self.column1]] = []
-            
-            for match in matches:
+
+            for _, match_row in matches_df.iterrows():
+                match_text = f"Index: {match_row['Index']}, Match: {match_row['Match']}, Score: {match_row['Score']}"
                 var = StringVar()
-                Checkbutton(self.match_frame, text=str(match), variable=var, onvalue=str(match), offvalue="").pack()
+                Checkbutton(self.match_frame, text=match_text, variable=var, onvalue=match_text, offvalue="").pack()
                 self.selections[row[self.column1]].append(var)
 
             self.next_item_index += 1  # Prepare for the next click of the "Next Item" button
-            self.next_button.config(state=NORMAL if self.next_item_index < len(self.matches) else DISABLED)
+            self.next_button.config(state=NORMAL if self.next_item_index < len(self.df1) else DISABLED)
 
-            self.progressbar["value"] = self.next_item_index
-            self.progressbar.update()
-            
             self.match_frame.pack(fill='both', expand=True)
 
         else:
@@ -248,31 +266,7 @@ class Application:
         for widget in self.match_frame.winfo_children():
             widget.destroy()
 
-    def set_column(self, dropdown, value):
-        if dropdown == self.dropdown1:
-            self.column1 = value
-            self.load_button1.config(text=f"Spreadsheet 1: {value}", bg="blue")
-        elif dropdown == self.dropdown2:
-            self.column2 = value
-            self.load_button2.config(text=f"Spreadsheet 2: {value}", bg="blue")
-        
-    def update_dropdown(self, dropdown, options):
-        dropdown['menu'].delete(0, 'end')
-        for option in options:
-            dropdown['menu'].add_command(label=option, command=lambda value=option: self.set_column(dropdown, value))
-
-    def set_column(self, dropdown, value):
-        if dropdown == self.dropdown1:
-            self.column1 = value
-            #column_button.config(text=f"Spreadsheet 1: {value}", bg="blue")
-            self.dropdown1.config(text=f"Spreadsheet 1: {value}", bg="blue")
-            self.dropdown2.config(state=NORMAL, bg='green')
-        elif dropdown == self.dropdown2:
-            self.column2 = value
-            #column_button.config(text=f"Spreadsheet 2: {value}", bg="blue")
-            self.dropdown2.config(text=f"Spreadsheet 2: {value}", bg="blue")
-            self.match_button.config(state=NORMAL, bg='green')  # Enable "Match Data" button right after Spreadsheet 2 is loaded
-        
+ 
 
 
 
