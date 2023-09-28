@@ -37,6 +37,12 @@ class Application:
         self.dropdown2.pack()
         self.dropdown2.config(state=DISABLED)
 
+        self.selected_column1_label = Label(master, text="")
+        self.selected_column1_label.pack()
+        self.selected_column2_label = Label(master, text="")
+        self.selected_column2_label.pack()
+
+
         self.match_button = Button(master, text="Match Data", command=self.match_data, state=DISABLED)
         self.match_button.pack(fill='x')
 
@@ -61,7 +67,7 @@ class Application:
         self.matches = []
         self.next_item_index = 0
         self.selections = {}
-        
+
     def load_spreadsheet(self, spreadsheet_number):
         filepath = filedialog.askopenfilename(title=f"Open Spreadsheet {spreadsheet_number}", filetypes=(("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")))
         if filepath:
@@ -92,7 +98,36 @@ class Application:
 
             except Exception as e:
                 messagebox.showerror("Error", f"An error occurred while loading the file:\n{e}")
+    
+    
+    def update_dropdown(self, dropdown, options):
+        dropdown['menu'].delete(0, 'end')
+        for option in options:
+            dropdown['menu'].add_command(label=option, command=lambda value=option: self.set_column(dropdown, value))
 
+
+def set_column(self, dropdown, value):
+    # Existing logic
+    if dropdown == self.dropdown1:
+        self.column1 = value
+        #column_button.config(text=f"Spreadsheet 1: {value}", bg="blue")
+        self.dropdown1.config(text=f"Spreadsheet 1: {value}", bg="blue")
+        self.dropdown2.config(state=NORMAL, bg='green')
+    elif dropdown == self.dropdown2:
+        self.column2 = value
+        #column_button.config(text=f"Spreadsheet 2: {value}", bg="blue")
+        self.dropdown2.config(text=f"Spreadsheet 2: {value}", bg="blue")
+        self.match_button.config(state=NORMAL, bg='green')  # Enable "Match Data" button right after Spreadsheet 2 is loaded
+    # Update the selected column display
+    if dropdown == self.dropdown1:
+        self.column1 = value
+        self.selected_column1_label.config(text=value)
+    elif dropdown == self.dropdown2:
+        self.column2 = value
+        self.selected_column2_label.config(text=value)
+
+
+    def set_column(self, dropdown, value):
 
             
     def prepare_match_data(self, df1, df2, column1, column2, progressbar, threshold=30):
