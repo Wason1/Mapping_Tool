@@ -30,15 +30,16 @@ class Application:
         self.dropdown1 = OptionMenu(master, self.variable1, '')
         self.dropdown1.pack()
         self.dropdown1.config(state=DISABLED)
+        # Display column selection
+        self.selected_column1_label = Label(master, text="")
+        self.selected_column1_label.pack()
 
         self.variable2 = StringVar(master)
         self.variable2.set("Select matching column from 2...")
         self.dropdown2 = OptionMenu(master, self.variable2, '')
         self.dropdown2.pack()
         self.dropdown2.config(state=DISABLED)
-
-        self.selected_column1_label = Label(master, text="")
-        self.selected_column1_label.pack()
+        # Display column selection
         self.selected_column2_label = Label(master, text="")
         self.selected_column2_label.pack()
 
@@ -106,29 +107,25 @@ class Application:
             dropdown['menu'].add_command(label=option, command=lambda value=option: self.set_column(dropdown, value))
 
 
-def set_column(self, dropdown, value):
-    # Existing logic
-    if dropdown == self.dropdown1:
-        self.column1 = value
-        #column_button.config(text=f"Spreadsheet 1: {value}", bg="blue")
-        self.dropdown1.config(text=f"Spreadsheet 1: {value}", bg="blue")
-        self.dropdown2.config(state=NORMAL, bg='green')
-    elif dropdown == self.dropdown2:
-        self.column2 = value
-        #column_button.config(text=f"Spreadsheet 2: {value}", bg="blue")
-        self.dropdown2.config(text=f"Spreadsheet 2: {value}", bg="blue")
-        self.match_button.config(state=NORMAL, bg='green')  # Enable "Match Data" button right after Spreadsheet 2 is loaded
-    # Update the selected column display
-    if dropdown == self.dropdown1:
-        self.column1 = value
-        self.selected_column1_label.config(text=value)
-    elif dropdown == self.dropdown2:
-        self.column2 = value
-        self.selected_column2_label.config(text=value)
-
-
     def set_column(self, dropdown, value):
-
+        # Existing logic
+        if dropdown == self.dropdown1:
+            self.column1 = value
+            #column_button.config(text=f"Spreadsheet 1: {value}", bg="blue")
+            self.dropdown1.config(text=f"Spreadsheet 1: {value}", bg="blue")
+            self.dropdown2.config(state=NORMAL, bg='green')
+        elif dropdown == self.dropdown2:
+            self.column2 = value
+            #column_button.config(text=f"Spreadsheet 2: {value}", bg="blue")
+            self.dropdown2.config(text=f"Spreadsheet 2: {value}", bg="blue")
+            self.match_button.config(state=NORMAL, bg='green')  # Enable "Match Data" button right after Spreadsheet 2 is loaded
+        # Update the selected column display
+        if dropdown == self.dropdown1:
+            self.column1 = value
+            self.selected_column1_label.config(text=value)
+        elif dropdown == self.dropdown2:
+            self.column2 = value
+            self.selected_column2_label.config(text=value)
             
     def prepare_match_data(self, df1, df2, column1, column2, progressbar, threshold=30):
         self.df1 = df1  # store the dataframes for future reference
