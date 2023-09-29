@@ -2,13 +2,13 @@ import pandas as pd
 import os
 import ast
 from fuzzywuzzy import fuzz, process
-from tkinter import Tk, filedialog, StringVar, END, messagebox, OptionMenu, Button, DISABLED, NORMAL, Listbox, Checkbutton, Label, Frame
+from tkinter import Tk, filedialog, StringVar, END, messagebox, OptionMenu, Button, DISABLED, NORMAL, Listbox, Checkbutton, Label, Frame, Canvas, Scrollbar
 from tkinter.ttk import Progressbar
 from tqdm import tqdm
 import subprocess
 import sys
 
-# [ ... your imports remain unchanged ... ]
+
 
 class Application:
     def __init__(self, master):
@@ -22,6 +22,7 @@ class Application:
         self.matches = []
         self.next_item_index = 0
         self.selections = {}
+        self.max_index = int(1)
 
         # Top frame for the buttons
         self.top_frame = Frame(master)
@@ -48,7 +49,7 @@ class Application:
         self.match_button = Button(self.top_frame, text="Initiate Mapping Process", command=self.start_matching, state=DISABLED)
         # self.match_button.grid(row=2, column=0, sticky='ew', padx=5)
 
-        self.next_button = Button(self.top_frame, text="Next Item", command=self.next_item, state=DISABLED)
+        self.next_button = Button(self.top_frame, text="Map First Item", command=self.next_item, state=DISABLED)
         # self.next_button.grid(row=2, column=1, sticky='ew', padx=5)
 
         # Top frame grid
@@ -63,9 +64,27 @@ class Application:
         self.top_frame.grid_columnconfigure(1, weight=1)
         self.top_frame.grid_columnconfigure(2, weight=1)
 
-        # Middle frame for future content with a border
+        # Middle frame with a border
         self.middle_frame = Frame(master, bd=1, relief='solid')
         self.middle_frame.pack(fill='both', expand=True, pady=10)
+
+
+
+        # Middle frame's left and right frames
+        self.middle_left_frame = Frame(self.middle_frame, bd=1, relief='solid')
+        self.middle_left_frame.pack(fill='both', expand=True, side='left', padx=5, pady=10)
+
+        self.middle_right_frame = Frame(self.middle_frame, bd=1, relief='solid')
+        self.middle_right_frame.pack(fill='both', expand=True, side='right', padx=5, pady=10)
+
+        # Initializing the canvas and the scrollbar for middle_left_frame
+        self.middle_left_canvas = Canvas(self.middle_left_frame)
+        self.middle_left_scrollbar = Scrollbar(self.middle_left_frame, orient="vertical", command=self.middle_left_canvas.yview)
+        self.middle_left_canvas.configure(yscrollcommand=self.middle_left_scrollbar.set)
+
+        self.middle_left_canvas.pack(side="left", fill="both", expand=True)
+        self.middle_left_scrollbar.pack(side="right", fill="y")
+
 
         # Bottom Frame for reset, close, progress bar
         self.bottom_frame = Frame(master)
@@ -104,23 +123,22 @@ class Application:
 
                 if spreadsheet_number == 1:
                     self.spreadsheet1 = df
-                    self.load_button1.config(bg="blue", text=filepath)
+                    self.load_button1.config(bg="white", text=filepath, state=DISABLED)
 
                     # Activate the 'load spreadsheet 2' button
-                    self.load_button2.config(state=NORMAL)  # This line makes the dropdown 2 button active
+                    self.load_button2.config(state=NORMAL, bg="green")  # This line makes the dropdown 2 button active
 
                     # Set dropdown column options for spreadsheet 1
                     self.update_dropdown(self.dropdown1, df.columns)
 
                 elif spreadsheet_number == 2:
                     self.spreadsheet2 = df
-                    self.load_button2.config(bg="blue", text=filepath)
+                    self.load_button2.config(bg="white", text=filepath, state=DISABLED)
                     # Set dropdown column options for spreadsheet 2
                     self.update_dropdown(self.dropdown2, df.columns)
-                    #Activate dropdown button 2
-                    self.dropdown2.config(state=NORMAL)
+                    
                     #activate dropdown button 1
-                    self.dropdown1.config(state=NORMAL)
+                    self.dropdown1.config(state=NORMAL, bg="green")
 
             except Exception as e:
                 messagebox.showerror("Error", f"An error occurred while loading the file:\n{e}")
@@ -136,13 +154,13 @@ class Application:
         # Existing logic
         if dropdown == self.dropdown1:
             self.column1 = value
-            #column_button.config(text=f"Spreadsheet 1: {value}", bg="blue")
-            self.dropdown1.config(text=f"Spreadsheet 1: {value}", bg="blue")
+            #column_button.config(text=f"Spreadsheet 1: {value}", bg="white")
+            self.dropdown1.config(text=f"Spreadsheet 1: {value}", bg="white", state=DISABLED)
             self.dropdown2.config(state=NORMAL, bg='green')
         elif dropdown == self.dropdown2:
             self.column2 = value
-            #column_button.config(text=f"Spreadsheet 2: {value}", bg="blue")
-            self.dropdown2.config(text=f"Spreadsheet 2: {value}", bg="blue")
+            #column_button.config(text=f"Spreadsheet 2: {value}", bg="white")
+            self.dropdown2.config(text=f"Spreadsheet 2: {value}", bg="white", state=DISABLED)
             self.match_button.config(state=NORMAL, bg='green')  # Enable "Start Matchin" button right after Spreadsheet 2 is loaded
         # Update the selected column display
         if dropdown == self.dropdown1:
@@ -156,13 +174,45 @@ class Application:
         self.progressbar["maximum"] = len(self.spreadsheet1)
         self.progress_label.config(text="0%")
         self.match_button.config(bg='blue', state=DISABLED)
-        self.next_button.config(state=NORMAL)
+        self.next_button.config(state=NORMAL, bg="green")
         self.save_button.config(state=NORMAL)
+        messagebox.showinfo("Mapping", f"You are going to map {len(self.spreadsheet1)} items")
+        self.max_index = len(self.spreadsheet1) - 1
+
+    # def next_item(self):
+    #     self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
+    #     next_text = "Map Next Item: " + str(self.next_item_index+2)
+    #     self.next_button.config(text=next_text)
+    #     self.next_item_index += 1
+
+    #     if self.next_item_index == self.max_index:
+    #         self.next_button.config(text="Final Item", state=DISABLED)
 
     def next_item(self):
-        row_df = self.spreadsheet1.iloc[[self.next_item_index]]
+        self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
+        next_text = "Map Next Item: " + str(self.next_item_index+2)
+        self.next_button.config(text=next_text)
         self.next_item_index += 1
-        self.next_button.config(text="Next Item")
+
+        if self.next_item_index == self.max_index:
+            self.next_button.config(text="Final Item", state=DISABLED)
+
+        # Clearing the previous display
+        self.middle_left_canvas.delete("all")
+
+        # Creating a new frame to hold the labels and placing it inside the canvas
+        content_frame = Frame(self.middle_left_canvas)
+        self.middle_left_canvas.create_window((0, 0), window=content_frame, anchor="nw")
+
+        for idx, (col, val) in enumerate(self.temp_row_df.iteritems()):
+            col_label = Label(content_frame, text=col)
+            col_label.grid(row=idx, column=0, sticky="w", padx=10, pady=5)
+
+            val_label = Label(content_frame, text=val.values[0])
+            val_label.grid(row=idx, column=1, sticky="w", padx=10, pady=5)
+
+        content_frame.update_idletasks()
+        self.middle_left_canvas.config(scrollregion=self.middle_left_canvas.bbox("all"))
 
     def save_selections(self, df1, df2):
         # Extract the selections from the checkbox items
@@ -183,7 +233,6 @@ class Application:
         print("FINAL SELECTED MATCHES: ",selected_matches)
         print("FINAL SELECTED INDEXES: ",selected_index_matches)
 
-
         # Initialize empty DataFrame
         df_joined = pd.DataFrame()
 
@@ -203,7 +252,6 @@ class Application:
             #df_joined = df_joined.append(row_joined)
             df_joined = pd.concat([df_joined, row_joined], ignore_index=True)
             print(df_joined)
-
 
         # Assuming df1 and df2 have same column names
         cols = pd.Series(df_joined.columns)
@@ -249,13 +297,13 @@ class Application:
         self.dropdown2.config(state=DISABLED, bg='SystemButtonFace')
         self.dropdown1['menu'].delete(0, 'end')
         self.dropdown2['menu'].delete(0, 'end')
-        self.selected_column1_label.config(text="")
-        self.selected_column2_label.config(text="")
+        self.variable1.set("Select matching column from 1...")
+        self.variable2.set("Select matching column from 2...")
 
         # Reset buttons
         self.load_button1.config(text="Load Spreadsheet 1", bg='green', state=NORMAL)
         self.load_button2.config(text="Load Spreadsheet 2", state=DISABLED, bg='SystemButtonFace')
-        self.match_button.config(text="Match Data", state=DISABLED, bg='SystemButtonFace')
+        self.match_button.config(text="Initiate Mapping Process", state=DISABLED, bg='SystemButtonFace')
         self.next_button.config(text="First Item to Map", state=DISABLED, bg='SystemButtonFace')
         self.save_button.config(text="Save Matches", state=DISABLED, bg='SystemButtonFace')
         
@@ -264,13 +312,8 @@ class Application:
         self.progress_label.config(text="0%")  # Add this line
 
         
-        # Clear the match_frame
-        for widget in self.match_frame.winfo_children():
-            widget.destroy()
-
- 
-
-
+        # Clear the match_frame        
+        self.middle_left_canvas.delete("all")
 
 root = Tk()
 root.state('zoomed')  # To maximize the window
