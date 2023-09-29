@@ -8,7 +8,7 @@ from tqdm import tqdm
 import subprocess
 import sys
 
-
+# [ ... your imports remain unchanged ... ]
 
 class Application:
     def __init__(self, master):
@@ -19,60 +19,79 @@ class Application:
         self.column1 = None
         self.column2 = None
 
-        self.load_button1 = Button(master, text="Load Spreadsheet 1", command=lambda: self.load_spreadsheet(1), bg='green')
-        self.load_button1.pack(fill='x')
-
-        self.load_button2 = Button(master, text="Load Spreadsheet 2", command=lambda: self.load_spreadsheet(2), state=DISABLED)
-        self.load_button2.pack(fill='x')
-
-        self.variable1 = StringVar(master)
-        self.variable1.set("Select matching column from 1...")
-        self.dropdown1 = OptionMenu(master, self.variable1, '')
-        self.dropdown1.pack()
-        self.dropdown1.config(state=DISABLED)
-        # Display column selection
-        self.selected_column1_label = Label(master, text="")
-        self.selected_column1_label.pack()
-
-        self.variable2 = StringVar(master)
-        self.variable2.set("Select matching column from 2...")
-        self.dropdown2 = OptionMenu(master, self.variable2, '')
-        self.dropdown2.pack()
-        self.dropdown2.config(state=DISABLED)
-        # Display column selection
-        self.selected_column2_label = Label(master, text="")
-        self.selected_column2_label.pack()
-
-
-        self.match_button = Button(master, text="Initiate Mapping Process", command=self.start_matching, state=DISABLED)
-        self.match_button.pack(fill='x')
-
-        self.next_button = Button(master, text="Next Item", command=self.next_item, state=DISABLED)
-        self.next_button.pack(fill='x')
-
-        self.save_button = Button(master, text="Save Matches", command=lambda: self.save_selections(self.spreadsheet1, self.spreadsheet2), state=DISABLED)
-        self.save_button.pack(fill='x')
-
-        self.close_button = Button(master, text="Close", command=self.close_app)
-        self.close_button.pack(fill='x')
-
-        #Progress Bar
-        self.progressbar = Progressbar(master, length=500)
-        self.progressbar.pack(fill='x')
-
-        #Progress Bar percentage text
-        self.progress_label = Label(master, text="") 
-        self.progress_label.pack(fill='x')
-
-        self.refresh_button = Button(master, text="Reset", command=self.refresh)
-        self.refresh_button.pack(fill='x')
-
-        self.match_frame = Frame(master)  # Container for match widgets
-        self.match_frame.pack(fill='both', expand=True)
-
         self.matches = []
         self.next_item_index = 0
         self.selections = {}
+
+        # Top frame for the buttons
+        self.top_frame = Frame(master)
+        self.top_frame.pack(fill='x', pady=10)
+
+        self.load_button1 = Button(self.top_frame, text="Load Spreadsheet 1", command=lambda: self.load_spreadsheet(1), bg='green')
+        # self.load_button1.grid(row=0, column=0, sticky='ew', padx=5)
+
+        self.load_button2 = Button(self.top_frame, text="Load Spreadsheet 2", command=lambda: self.load_spreadsheet(2), state=DISABLED)
+        # self.load_button2.grid(row=1, column=0, sticky='ew', padx=5)
+
+        self.variable1 = StringVar(master)
+        self.variable1.set("Select matching column from 1...")
+        self.dropdown1 = OptionMenu(self.top_frame, self.variable1, '')
+        self.dropdown1.config(state=DISABLED)
+        # self.dropdown1.grid(row=0, column=1, sticky='ew', padx=5)
+
+        self.variable2 = StringVar(master)
+        self.variable2.set("Select matching column from 2...")
+        self.dropdown2 = OptionMenu(self.top_frame, self.variable2, '')
+        self.dropdown2.config(state=DISABLED)
+        # self.dropdown2.grid(row=1, column=1, sticky='ew', padx=5)
+
+        self.match_button = Button(self.top_frame, text="Initiate Mapping Process", command=self.start_matching, state=DISABLED)
+        # self.match_button.grid(row=2, column=0, sticky='ew', padx=5)
+
+        self.next_button = Button(self.top_frame, text="Next Item", command=self.next_item, state=DISABLED)
+        # self.next_button.grid(row=2, column=1, sticky='ew', padx=5)
+
+        # Top frame grid
+        self.load_button1.grid(row=0, column=0, sticky='ew', padx=5, columnspan=2)
+        self.load_button2.grid(row=1, column=0, sticky='ew', padx=5, columnspan=2)
+        self.dropdown1.grid(row=0, column=2, sticky='ew', padx=5)
+        self.dropdown2.grid(row=1, column=2, sticky='ew', padx=5)
+        self.match_button.grid(row=2, column=0, sticky='ew', padx=5, columnspan=2)
+        self.next_button.grid(row=2, column=2, sticky='ew', padx=5)
+
+        self.top_frame.grid_columnconfigure(0, weight=1)
+        self.top_frame.grid_columnconfigure(1, weight=1)
+        self.top_frame.grid_columnconfigure(2, weight=1)
+
+        # Middle frame for future content with a border
+        self.middle_frame = Frame(master, bd=1, relief='solid')
+        self.middle_frame.pack(fill='both', expand=True, pady=10)
+
+        # Bottom Frame for reset, close, progress bar
+        self.bottom_frame = Frame(master)
+        self.bottom_frame.pack(fill='x', side='bottom', pady=10)
+
+        # Progress Bar
+        self.progressbar = Progressbar(self.bottom_frame, length=500)
+        self.progressbar.pack(fill='x')
+
+        self.progress_label = Label(self.bottom_frame, text="")
+        self.progress_label.pack(fill='x')
+
+        self.refresh_button = Button(self.bottom_frame, text="Reset", command=self.refresh)
+        self.refresh_button.pack(fill='x')
+
+        self.save_button = Button(self.bottom_frame, text="Save Matches", command=lambda: self.save_selections(self.spreadsheet1, self.spreadsheet2), state=DISABLED)
+        self.save_button.pack(fill='x')
+
+        self.close_button = Button(self.bottom_frame, text="Close", command=self.close_app)
+        self.close_button.pack(fill='x')
+
+        self.match_frame = Frame(self.middle_frame)  # Container for match widgets
+        self.match_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+
+
 
     def load_spreadsheet(self, spreadsheet_number):
         filepath = filedialog.askopenfilename(title=f"Open Spreadsheet {spreadsheet_number}", filetypes=(("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")))
@@ -128,10 +147,10 @@ class Application:
         # Update the selected column display
         if dropdown == self.dropdown1:
             self.column1 = value
-            self.selected_column1_label.config(text=value)
+            self.variable1.set(value)
         elif dropdown == self.dropdown2:
             self.column2 = value
-            self.selected_column2_label.config(text=value)
+            self.variable2.set(value)
             
     def start_matching(self):
         self.progressbar["maximum"] = len(self.spreadsheet1)
