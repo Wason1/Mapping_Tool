@@ -183,6 +183,8 @@ class Application:
         self.max_index = len(self.spreadsheet1) - 1
         # Generate a series for the column to map against
         self.matching_data_series = self.spreadsheet2[self.column2]
+        self.df_final = pd.DataFrame()
+
 
 
     def fuzzy_logic_dataframe(self, input_string, series):
@@ -215,31 +217,56 @@ class Application:
             label = tk.Label(target_frame, text=f"{col}: {value.values[0]}")
             label.pack(padx=5, pady=5, anchor='w')
 
+    def append_rows(self, index1, index2, df1, df2, df3):
+        # Extract rows from df1 and df2
+        row1 = df1.iloc[[index1]].reset_index(drop=True)
+        row2 = df2.iloc[[index2]].reset_index(drop=True)
+        
+        # Concatenate the rows horizontally
+        new_row = pd.concat([row1, row2], axis=1)
+        
+        # Append the concatenated row to df3
+        df3 = pd.concat([df3, new_row], ignore_index=True)
+        
+        return df3
+
+    
     def next_item(self):
+        # don't do this at sart of matching
         if self.next_item_index>0:
             print('before filtering')
             print(self.temp_subset_df)
-            self.temp_match_df = self.temp_subset_df[self.temp_subset_df['IS_A_MATCH'].isin([1])]
+            # Filter for matches only
+            self.temp_subset_df = self.temp_subset_df[self.temp_subset_df['IS_A_MATCH'] == 1]
             print('after filtering')
-            print(self.temp_match_df)
+            print(self.temp_subset_df)
+            for index, row in self.temp_subset_df.iterrows():
+                self.index_1 = (row['spreadsheet_1_index'])
+                self.index_2 = (row['spreadsheet_2_index'])
+                self.df_final = self.append_rows(self.index_1, self.index_2, self.spreadsheet1, self.spreadsheet2, self.df_final)
+            print(self.df_final)
+
         self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
         self.current_item_to_map = self.temp_row_df.loc[self.next_item_index, self.column1]
         # Display the row data in middle_left_frame
         self.display_dataframe_row(self.temp_row_df, self.middle_left_frame)
         self.temp_df = self.fuzzy_logic_dataframe(self.current_item_to_map, self.matching_data_series )
-        self.temp_subset_df = self.temp_df.iloc[:10].copy()
+        self.temp_subset_df = self.temp_df.iloc[:50].copy()
         self.temp_subset_df['IS_A_MATCH'] = 0
-        self.temp_subset_df['original_index'] = self.temp_subset_df.index
+        self.temp_subset_df['spreadsheet_1_index'] = self.next_item_index
+        self.temp_subset_df['spreadsheet_2_index'] = self.temp_subset_df.index
         self.temp_subset_df.reset_index(drop=True, inplace=True)
         self.display_checkboxes(self.temp_subset_df)
         #line below causing Nans
         
+        #Update next button
         next_text = "Map Next Item: " + str(self.next_item_index+2)
         self.next_button.config(text=next_text)
+        # add one to get to the next index
         self.next_item_index += 1
-
+        #do this on the last item to map
         if self.next_item_index == self.max_index:
-            self.next_button.config(text="Final Item", state=DISABLED)
+            self.next_button.config(text="Final Item")
 
 
     # New function to display rows from temp_subset_df with checkboxes in middle_right_frame
