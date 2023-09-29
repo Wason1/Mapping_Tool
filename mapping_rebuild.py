@@ -186,17 +186,6 @@ class Application:
 
 
     def fuzzy_logic_dataframe(self, input_string, series):
-        """
-        Compute similarity scores between an input string and every string in a series using both 
-        token_sort_ratio and token_set_ratio, and taking the maximum of the two.
-        
-        Parameters:
-        - input_string (str): The string to compare against the series.
-        - series (pd.Series): The series containing strings for comparison.
-        
-        Returns:
-        - pd.DataFrame: A dataframe with the original strings from the series and their similarity scores.
-        """
         # Calculate similarity scores
         sort_scores = series.apply(lambda x: fuzz.token_sort_ratio(input_string, x))
         set_scores = series.apply(lambda x: fuzz.token_set_ratio(input_string, x))
@@ -228,15 +217,23 @@ class Application:
 
     def next_item(self):
         if self.next_item_index>0:
+            print('before filtering')
             print(self.temp_subset_df)
+            self.temp_match_df = self.temp_subset_df[self.temp_subset_df['IS_A_MATCH'].isin([1])]
+            print('after filtering')
+            print(self.temp_match_df)
         self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
         self.current_item_to_map = self.temp_row_df.loc[self.next_item_index, self.column1]
         # Display the row data in middle_left_frame
         self.display_dataframe_row(self.temp_row_df, self.middle_left_frame)
         self.temp_df = self.fuzzy_logic_dataframe(self.current_item_to_map, self.matching_data_series )
-        self.temp_subset_df = self.temp_df.iloc[:50]
+        self.temp_subset_df = self.temp_df.iloc[:10].copy()
         self.temp_subset_df['IS_A_MATCH'] = 0
+        self.temp_subset_df['original_index'] = self.temp_subset_df.index
+        self.temp_subset_df.reset_index(drop=True, inplace=True)
         self.display_checkboxes(self.temp_subset_df)
+        #line below causing Nans
+        
         next_text = "Map Next Item: " + str(self.next_item_index+2)
         self.next_button.config(text=next_text)
         self.next_item_index += 1
@@ -244,13 +241,6 @@ class Application:
         if self.next_item_index == self.max_index:
             self.next_button.config(text="Final Item", state=DISABLED)
 
-
-
-    # ...[previous code]...
-
-    # def next_item(self):
-    #     # ...[previous code for next_item]...
-    #     self.display_checkboxes(self.temp_subset_df)
 
     # New function to display rows from temp_subset_df with checkboxes in middle_right_frame
     def display_checkboxes(self, subset_df):
@@ -278,9 +268,6 @@ class Application:
             self.temp_subset_df.at[index, 'IS_A_MATCH'] = 1
         else:
             self.temp_subset_df.at[index, 'IS_A_MATCH'] = 0
-
-    # ...[rest of the code]...
-
 
     def save_selections(self, df1, df2):
         # Extract the selections from the checkbox items
