@@ -179,15 +179,6 @@ class Application:
         messagebox.showinfo("Mapping", f"You are going to map {len(self.spreadsheet1)} items")
         self.max_index = len(self.spreadsheet1) - 1
 
-    # def next_item(self):
-    #     self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
-    #     next_text = "Map Next Item: " + str(self.next_item_index+2)
-    #     self.next_button.config(text=next_text)
-    #     self.next_item_index += 1
-
-    #     if self.next_item_index == self.max_index:
-    #         self.next_button.config(text="Final Item", state=DISABLED)
-
     def next_item(self):
         self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
         next_text = "Map Next Item: " + str(self.next_item_index+2)
@@ -197,22 +188,7 @@ class Application:
         if self.next_item_index == self.max_index:
             self.next_button.config(text="Final Item", state=DISABLED)
 
-        # Clearing the previous display
-        self.middle_left_canvas.delete("all")
-
-        # Creating a new frame to hold the labels and placing it inside the canvas
-        content_frame = Frame(self.middle_left_canvas)
-        self.middle_left_canvas.create_window((0, 0), window=content_frame, anchor="nw")
-
-        for idx, (col, val) in enumerate(self.temp_row_df.iteritems()):
-            col_label = Label(content_frame, text=col)
-            col_label.grid(row=idx, column=0, sticky="w", padx=10, pady=5)
-
-            val_label = Label(content_frame, text=val.values[0])
-            val_label.grid(row=idx, column=1, sticky="w", padx=10, pady=5)
-
-        content_frame.update_idletasks()
-        self.middle_left_canvas.config(scrollregion=self.middle_left_canvas.bbox("all"))
+    
 
     def save_selections(self, df1, df2):
         # Extract the selections from the checkbox items
