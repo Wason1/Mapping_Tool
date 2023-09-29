@@ -44,7 +44,7 @@ class Application:
         self.selected_column2_label.pack()
 
 
-        self.match_button = Button(master, text="Match Data", command=self.match_data, state=DISABLED)
+        self.match_button = Button(master, text="Initiate Mapping Process", command=self.start_matching, state=DISABLED)
         self.match_button.pack(fill='x')
 
         self.next_button = Button(master, text="Next Item", command=self.next_item, state=DISABLED)
@@ -56,8 +56,13 @@ class Application:
         self.close_button = Button(master, text="Close", command=self.close_app)
         self.close_button.pack(fill='x')
 
+        #Progress Bar
         self.progressbar = Progressbar(master, length=500)
         self.progressbar.pack(fill='x')
+
+        #Progress Bar percentage text
+        self.progress_label = Label(master, text="") 
+        self.progress_label.pack(fill='x')
 
         self.refresh_button = Button(master, text="Reset", command=self.refresh)
         self.refresh_button.pack(fill='x')
@@ -80,21 +85,22 @@ class Application:
 
                 if spreadsheet_number == 1:
                     self.spreadsheet1 = df
-                    self.load_button1.config(bg="blue")
+                    self.load_button1.config(bg="blue", text=filepath)
 
                     # Activate the 'load spreadsheet 2' button
-                    self.load_button2.config(state=NORMAL)  # This line makes the button active
+                    self.load_button2.config(state=NORMAL)  # This line makes the dropdown 2 button active
+
+                    # Set dropdown column options for spreadsheet 1
+                    self.update_dropdown(self.dropdown1, df.columns)
 
                 elif spreadsheet_number == 2:
                     self.spreadsheet2 = df
-                    self.load_button2.config(bg="blue")
-
-                    #Activate dropdown 2
+                    self.load_button2.config(bg="blue", text=filepath)
+                    # Set dropdown column options for spreadsheet 2
                     self.update_dropdown(self.dropdown2, df.columns)
+                    #Activate dropdown button 2
                     self.dropdown2.config(state=NORMAL)
-
-                    #activate dropdown 1
-                    self.update_dropdown(self.dropdown1, df.columns)
+                    #activate dropdown button 1
                     self.dropdown1.config(state=NORMAL)
 
             except Exception as e:
@@ -118,7 +124,7 @@ class Application:
             self.column2 = value
             #column_button.config(text=f"Spreadsheet 2: {value}", bg="blue")
             self.dropdown2.config(text=f"Spreadsheet 2: {value}", bg="blue")
-            self.match_button.config(state=NORMAL, bg='green')  # Enable "Match Data" button right after Spreadsheet 2 is loaded
+            self.match_button.config(state=NORMAL, bg='green')  # Enable "Start Matchin" button right after Spreadsheet 2 is loaded
         # Update the selected column display
         if dropdown == self.dropdown1:
             self.column1 = value
@@ -127,76 +133,17 @@ class Application:
             self.column2 = value
             self.selected_column2_label.config(text=value)
             
-    def prepare_match_data(self, df1, df2, column1, column2, progressbar, threshold=30):
-        self.df1 = df1  # store the dataframes for future reference
-        self.df2 = df2
-        self.column1 = column1
-        self.column2 = column2
-        self.threshold = threshold
-        self.progressbar = progressbar
-        
-        self.progressbar["maximum"] = len(self.df1)
-        self.matches = []  # Reset matches list
-        self.next_item_index = 0  # Reset index
-
-        # Process only the first item initially
-        self.next_item()
-
-    def match_data(self):
-        if self.spreadsheet1 is not None and self.spreadsheet2 is not None and self.column1 is not None and self.column2 is not None:
-            self.prepare_match_data(self.spreadsheet1, self.spreadsheet2, self.column1, self.column2, self.progressbar)
-            self.match_button.config(bg='blue', state=DISABLED)
-            self.save_button.config(state=NORMAL)  # Enable "Save Matches" button right after matching is complete
-        else:
-            messagebox.showerror("Error", "Please load both spreadsheets and select columns before matching data.")
-    
-    def generate_match(self, index):
-        """Generate match for the item at the provided index."""
-        s1_item = self.df1[self.column1].iloc[index]
-        s2_with_indices = [(i, elem) for i, elem in enumerate(self.df2[self.column2])]
-        matches = process.extract(s1_item, s2_with_indices, scorer=fuzz.token_sort_ratio, limit=20)
-
-        good_matches = [pd.DataFrame({'Index': [match[0][0]], 
-                                      'Match': [match[0][1]], 
-                                      'Score': [match[1]]}) for match in matches if match[1] >= self.threshold]
-
-        self.matches.append((self.df1.iloc[index], pd.concat(good_matches, ignore_index=True)))
-        
-        # Update progress bar
-        self.progressbar["value"] = index + 1
-        self.progressbar.update()
+    def start_matching(self):
+        self.progressbar["maximum"] = len(self.spreadsheet1)
+        self.progress_label.config(text="0%")
+        self.match_button.config(bg='blue', state=DISABLED)
+        self.next_button.config(state=NORMAL)
+        self.save_button.config(state=NORMAL)
 
     def next_item(self):
-        # Check if we need to generate the next match
-        if self.next_item_index >= len(self.matches) and self.next_item_index < len(self.df1):
-            self.generate_match(self.next_item_index)
-
-        if self.matches and self.next_item_index < len(self.matches):
-            # Clear the match_frame
-            for widget in self.match_frame.winfo_children():
-                widget.destroy()
-
-            row, matches_df = self.matches[self.next_item_index]
-            self.match_frame.pack_forget()
-
-            Label(self.match_frame, text=f"Matches for row:\n{row.to_string()}").pack()
-
-            # Create a list to store the StringVar objects for this item
-            self.selections[row[self.column1]] = []
-
-            for _, match_row in matches_df.iterrows():
-                match_text = f"Index: {match_row['Index']}, Match: {match_row['Match']}, Score: {match_row['Score']}"
-                var = StringVar()
-                Checkbutton(self.match_frame, text=match_text, variable=var, onvalue=match_text, offvalue="").pack()
-                self.selections[row[self.column1]].append(var)
-
-            self.next_item_index += 1  # Prepare for the next click of the "Next Item" button
-            self.next_button.config(state=NORMAL if self.next_item_index < len(self.df1) else DISABLED)
-
-            self.match_frame.pack(fill='both', expand=True)
-
-        else:
-            messagebox.showinfo("Info", "No more items to match.")
+        row_df = self.spreadsheet1.iloc[[self.next_item_index]]
+        self.next_item_index += 1
+        self.next_button.config(text="Next Item")
 
     def save_selections(self, df1, df2):
         # Extract the selections from the checkbox items
@@ -283,16 +230,20 @@ class Application:
         self.dropdown2.config(state=DISABLED, bg='SystemButtonFace')
         self.dropdown1['menu'].delete(0, 'end')
         self.dropdown2['menu'].delete(0, 'end')
+        self.selected_column1_label.config(text="")
+        self.selected_column2_label.config(text="")
 
         # Reset buttons
         self.load_button1.config(text="Load Spreadsheet 1", bg='green', state=NORMAL)
         self.load_button2.config(text="Load Spreadsheet 2", state=DISABLED, bg='SystemButtonFace')
         self.match_button.config(text="Match Data", state=DISABLED, bg='SystemButtonFace')
-        self.next_button.config(text="Next Item", state=DISABLED, bg='SystemButtonFace')
+        self.next_button.config(text="First Item to Map", state=DISABLED, bg='SystemButtonFace')
         self.save_button.config(text="Save Matches", state=DISABLED, bg='SystemButtonFace')
         
         # Reset progress bar
         self.progressbar["value"] = 0
+        self.progress_label.config(text="0%")  # Add this line
+
         
         # Clear the match_frame
         for widget in self.match_frame.winfo_children():
