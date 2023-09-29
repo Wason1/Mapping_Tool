@@ -122,6 +122,7 @@ class Application:
                     df = pd.read_excel(filepath)
 
                 if spreadsheet_number == 1:
+                    df.columns = [col + '_1' for col in df.columns]
                     self.spreadsheet1 = df
                     self.load_button1.config(bg="white", text=filepath, state=DISABLED)
 
@@ -132,6 +133,7 @@ class Application:
                     self.update_dropdown(self.dropdown1, df.columns)
 
                 elif spreadsheet_number == 2:
+                    df.columns = [col + '_2' for col in df.columns]
                     self.spreadsheet2 = df
                     self.load_button2.config(bg="white", text=filepath, state=DISABLED)
                     # Set dropdown column options for spreadsheet 2
