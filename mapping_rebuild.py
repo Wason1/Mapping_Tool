@@ -2,7 +2,9 @@ import pandas as pd
 import os
 import ast
 from fuzzywuzzy import fuzz, process
-from tkinter import Tk, filedialog, StringVar, END, messagebox, OptionMenu, Button, DISABLED, NORMAL, Listbox, Checkbutton, Label, Frame, Canvas, Scrollbar
+import tkinter as tk
+from tkinter import ttk
+from tkinter import filedialog, StringVar, END, messagebox, OptionMenu, Button, DISABLED, NORMAL, Checkbutton, Label, Frame, Canvas, Scrollbar
 from tkinter.ttk import Progressbar
 from tqdm import tqdm
 import subprocess
@@ -110,8 +112,6 @@ class Application:
         self.match_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
 
-
-
     def load_spreadsheet(self, spreadsheet_number):
         filepath = filedialog.askopenfilename(title=f"Open Spreadsheet {spreadsheet_number}", filetypes=(("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")))
         if filepath:
@@ -169,6 +169,9 @@ class Application:
         elif dropdown == self.dropdown2:
             self.column2 = value
             self.variable2.set(value)
+
+
+
             
     def start_matching(self):
         self.progressbar["maximum"] = len(self.spreadsheet1)
@@ -179,16 +182,27 @@ class Application:
         messagebox.showinfo("Mapping", f"You are going to map {len(self.spreadsheet1)} items")
         self.max_index = len(self.spreadsheet1) - 1
 
+    def display_dataframe_row(self, row_df, target_frame):
+        # Clear any previous data
+        for widget in target_frame.winfo_children():
+            widget.destroy()
+
+        # Display the row data
+        for col, value in row_df.items():
+            label = tk.Label(target_frame, text=f"{col}: {value.values[0]}")
+            label.pack(padx=5, pady=5, anchor='w')
+
     def next_item(self):
         self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
+        # Display the row data in middle_left_frame
+        self.display_dataframe_row(self.temp_row_df, self.middle_left_frame)
+
         next_text = "Map Next Item: " + str(self.next_item_index+2)
         self.next_button.config(text=next_text)
         self.next_item_index += 1
 
         if self.next_item_index == self.max_index:
             self.next_button.config(text="Final Item", state=DISABLED)
-
-    
 
     def save_selections(self, df1, df2):
         # Extract the selections from the checkbox items
@@ -286,12 +300,10 @@ class Application:
         # Reset progress bar
         self.progressbar["value"] = 0
         self.progress_label.config(text="0%")  # Add this line
-
         
-        # Clear the match_frame        
-        self.middle_left_canvas.delete("all")
+        # Clear the match_frame 
 
-root = Tk()
+root = tk.Tk()
 root.state('zoomed')  # To maximize the window
 app = Application(root)
 root.mainloop()
