@@ -181,6 +181,40 @@ class Application:
         self.save_button.config(state=NORMAL)
         messagebox.showinfo("Mapping", f"You are going to map {len(self.spreadsheet1)} items")
         self.max_index = len(self.spreadsheet1) - 1
+        # Generate a series for the column to map against
+        self.matching_data_series = self.spreadsheet2[self.column2]
+
+
+    def fuzzy_logic_dataframe(self, input_string, series):
+        """
+        Compute similarity scores between an input string and every string in a series using both 
+        token_sort_ratio and token_set_ratio, and taking the maximum of the two.
+        
+        Parameters:
+        - input_string (str): The string to compare against the series.
+        - series (pd.Series): The series containing strings for comparison.
+        
+        Returns:
+        - pd.DataFrame: A dataframe with the original strings from the series and their similarity scores.
+        """
+        # Calculate similarity scores
+        sort_scores = series.apply(lambda x: fuzz.token_sort_ratio(input_string, x))
+        set_scores = series.apply(lambda x: fuzz.token_set_ratio(input_string, x))
+
+        # Take the maximum of the two scores
+        max_scores = pd.Series([max(a, b) for a, b in zip(sort_scores, set_scores)])
+
+        # Create a dataframe
+        df = pd.DataFrame({
+            'Value': series,
+            'Score': max_scores
+        })
+
+        # Sort the dataframe by score in descending order
+        df = df.sort_values(by='Score', ascending=False)
+
+        return df
+
 
     def display_dataframe_row(self, row_df, target_frame):
         # Clear any previous data
@@ -194,8 +228,11 @@ class Application:
 
     def next_item(self):
         self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
+        self.current_item_to_map = self.temp_row_df.loc[self.next_item_index, self.column1]
         # Display the row data in middle_left_frame
         self.display_dataframe_row(self.temp_row_df, self.middle_left_frame)
+        self.temp_df = self.fuzzy_logic_dataframe(self.current_item_to_map, self.matching_data_series )
+        print(self.temp_df)
 
         next_text = "Map Next Item: " + str(self.next_item_index+2)
         self.next_button.config(text=next_text)
