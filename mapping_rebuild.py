@@ -227,19 +227,60 @@ class Application:
             label.pack(padx=5, pady=5, anchor='w')
 
     def next_item(self):
+        if self.next_item_index>0:
+            print(self.temp_subset_df)
         self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
         self.current_item_to_map = self.temp_row_df.loc[self.next_item_index, self.column1]
         # Display the row data in middle_left_frame
         self.display_dataframe_row(self.temp_row_df, self.middle_left_frame)
         self.temp_df = self.fuzzy_logic_dataframe(self.current_item_to_map, self.matching_data_series )
-        print(self.temp_df)
-
+        self.temp_subset_df = self.temp_df.iloc[:50]
+        self.temp_subset_df['IS_A_MATCH'] = 0
+        self.display_checkboxes(self.temp_subset_df)
         next_text = "Map Next Item: " + str(self.next_item_index+2)
         self.next_button.config(text=next_text)
         self.next_item_index += 1
 
         if self.next_item_index == self.max_index:
             self.next_button.config(text="Final Item", state=DISABLED)
+
+
+
+    # ...[previous code]...
+
+    # def next_item(self):
+    #     # ...[previous code for next_item]...
+    #     self.display_checkboxes(self.temp_subset_df)
+
+    # New function to display rows from temp_subset_df with checkboxes in middle_right_frame
+    def display_checkboxes(self, subset_df):
+        for widget in self.middle_right_frame.winfo_children():
+            widget.destroy()
+
+        # Store variable objects associated with each checkbox
+        self.checkbox_vars = {}
+        
+        for index, row in subset_df.iterrows():
+            value = row['Value']
+            is_a_match = row['IS_A_MATCH']
+
+            # Variable for checkbox
+            var = tk.IntVar(value=is_a_match)
+            self.checkbox_vars[index] = var
+
+            # Checkbutton with command to update 'IS_A_MATCH' column
+            checkbox = Checkbutton(self.middle_right_frame, text=value, variable=var, command=lambda i=index: self.update_is_a_match(i))
+            checkbox.pack(anchor='w')
+
+    # Function to update 'IS_A_MATCH' column based on checkbox state
+    def update_is_a_match(self, index):
+        if self.checkbox_vars[index].get() == 1:
+            self.temp_subset_df.at[index, 'IS_A_MATCH'] = 1
+        else:
+            self.temp_subset_df.at[index, 'IS_A_MATCH'] = 0
+
+    # ...[rest of the code]...
+
 
     def save_selections(self, df1, df2):
         # Extract the selections from the checkbox items
