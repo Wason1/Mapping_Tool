@@ -14,16 +14,15 @@ class Application:
         self.master = master
         self.spreadsheet1 = None
         self.spreadsheet2 = None
-
         self.column1 = None
         self.column2 = None
-
         self.matches = []
         self.next_item_index = 0
         self.selections = {}
         self.max_index = int(1)
 
         # Top frame for the buttons
+        #region
         self.top_frame = Frame(master)
         self.top_frame.pack(fill='x', pady=10)
 
@@ -62,7 +61,10 @@ class Application:
         self.top_frame.grid_columnconfigure(0, weight=1)
         self.top_frame.grid_columnconfigure(1, weight=1)
         self.top_frame.grid_columnconfigure(2, weight=1)
+        #endregion
 
+        # Middle frame
+        #region
         # Middle frame with a border
         self.middle_frame = Frame(master, bd=1, relief='solid')
         self.middle_frame.pack(fill='both', expand=True, pady=10)
@@ -73,42 +75,64 @@ class Application:
         self.middle_right_frame = Frame(self.middle_frame, bd=1, relief='solid')
         self.middle_right_frame.pack(fill='both', expand=True, side='right', padx=5, pady=10)
 
-        # Initializing the canvas and the scrollbar for middle_right_frame
+        # Canvas and Scrollbars for middle_right_frame
         self.middle_right_canvas = Canvas(self.middle_right_frame)
         self.middle_right_scrollbar = Scrollbar(self.middle_right_frame, orient="vertical", command=self.middle_right_canvas.yview)
-        self.middle_right_canvas.configure(yscrollcommand=self.middle_right_scrollbar.set)
-        self.middle_right_canvas.pack(side="left", fill="both", expand=True)
-        self.middle_right_scrollbar.pack(side="right", fill="y")
+        self.middle_right_scrollbar_horizontal = Scrollbar(self.middle_right_frame, orient="horizontal", command=self.middle_right_canvas.xview)
+        self.middle_right_canvas.configure(yscrollcommand=self.middle_right_scrollbar.set, xscrollcommand=self.middle_right_scrollbar_horizontal.set)
 
-        # Initializing the canvas and the scrollbar for middle_left_frame
+        # Grid layout for right canvas and scrollbars
+        self.middle_right_canvas.grid(row=0, column=0, sticky="nsew")
+        self.middle_right_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.middle_right_scrollbar_horizontal.grid(row=1, column=0, sticky="ew")
+        self.middle_right_frame.grid_rowconfigure(0, weight=1)
+        self.middle_right_frame.grid_columnconfigure(0, weight=1)
+
+        # Inner Frame for middle_right_canvas
+        self.middle_right_inner_frame = Frame(self.middle_right_canvas)
+        self.middle_right_canvas.create_window((0, 0), window=self.middle_right_inner_frame, anchor='nw')
+
+        # Canvas and Scrollbars for middle_left_frame
         self.middle_left_canvas = Canvas(self.middle_left_frame)
         self.middle_left_scrollbar = Scrollbar(self.middle_left_frame, orient="vertical", command=self.middle_left_canvas.yview)
-        self.middle_left_canvas.configure(yscrollcommand=self.middle_left_scrollbar.set)
-        self.middle_left_canvas.pack(side="left", fill="both", expand=True)
-        self.middle_left_scrollbar.pack(side="right", fill="y")
+        self.middle_left_scrollbar_horizontal = Scrollbar(self.middle_left_frame, orient="horizontal", command=self.middle_left_canvas.xview)
+        self.middle_left_canvas.configure(yscrollcommand=self.middle_left_scrollbar.set, xscrollcommand=self.middle_left_scrollbar_horizontal.set)
+
+        # Grid layout for left canvas and scrollbars
+        self.middle_left_canvas.grid(row=0, column=0, sticky="nsew")
+        self.middle_left_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.middle_left_scrollbar_horizontal.grid(row=1, column=0, sticky="ew")
+        self.middle_left_frame.grid_rowconfigure(0, weight=1)
+        self.middle_left_frame.grid_columnconfigure(0, weight=1)
+
+        # Inner Frame for middle_left_canvas
+        self.middle_left_inner_frame = Frame(self.middle_left_canvas)
+        self.middle_left_canvas.create_window((0, 0), window=self.middle_left_inner_frame, anchor='nw')
+
+        # Configure the canvas scroll region whenever the inner frame size changes.
+        self.middle_left_inner_frame.bind('<Configure>', lambda e: self.middle_left_canvas.configure(scrollregion=self.middle_left_canvas.bbox("all")))
+        self.middle_right_inner_frame.bind('<Configure>', lambda e: self.middle_right_canvas.configure(scrollregion=self.middle_right_canvas.bbox("all")))
+
+        #endregion
 
         # Bottom Frame for reset, close, progress bar
+        #region
         self.bottom_frame = Frame(master)
         self.bottom_frame.pack(fill='x', side='bottom', pady=10)
-
         # Progress Bar
         self.progressbar = Progressbar(self.bottom_frame, length=500)
         self.progressbar.pack(fill='x')
-
         self.progress_label = Label(self.bottom_frame, text="")
         self.progress_label.pack(fill='x')
-
         self.refresh_button = Button(self.bottom_frame, text="Reset", command=self.refresh)
         self.refresh_button.pack(fill='x')
-
         self.save_button = Button(self.bottom_frame, text="Save Matches", command=self.save_selections, state=DISABLED)
         self.save_button.pack(fill='x')
-
         self.close_button = Button(self.bottom_frame, text="Close", command=self.close_app)
         self.close_button.pack(fill='x')
-
         self.match_frame = Frame(self.middle_frame)  # Container for match widgets
         self.match_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        #endregion
 
     def load_spreadsheet(self, spreadsheet_number):
         filepath = filedialog.askopenfilename(title=f"Open Spreadsheet {spreadsheet_number}", filetypes=(("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")))
@@ -180,8 +204,6 @@ class Application:
         self.matching_data_series = self.spreadsheet2[self.column2]
         self.df_final = pd.DataFrame()
 
-
-
     def fuzzy_logic_dataframe(self, input_string, series):
         # Calculate similarity scores
         sort_scores = series.apply(lambda x: fuzz.token_sort_ratio(input_string, x))
@@ -196,7 +218,6 @@ class Application:
         # Sort the dataframe by score in descending order
         df = df.sort_values(by='Score', ascending=False)
         return df
-
 
     def display_dataframe_row(self, row_df, target_frame):
         # Clear any previous data
@@ -236,7 +257,7 @@ class Application:
             self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
             self.current_item_to_map = self.temp_row_df.loc[self.next_item_index, self.column1]
             # Display the row data in middle_left_frame
-            self.display_dataframe_row(self.temp_row_df, self.middle_left_frame)
+            self.display_dataframe_row(self.temp_row_df, self.middle_left_inner_frame)
             self.temp_df = self.fuzzy_logic_dataframe(self.current_item_to_map, self.matching_data_series )
             self.temp_subset_df = self.temp_df.iloc[:50].copy()
             self.temp_subset_df['IS_A_MATCH'] = 0
@@ -256,7 +277,7 @@ class Application:
                 self.next_button.config(text=next_text)
         # Do this after final item is mapped and added to the final df
         else:
-            # Disable Mapping Button
+            # Disable Mapping Button after locking in last item
             self.next_button.config(text="Mapping Done", state=DISABLED, bg="white")
             # Green Save button
             self.save_button.config(bg="green")
