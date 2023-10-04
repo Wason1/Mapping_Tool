@@ -25,31 +25,18 @@ class Application:
         #region
         self.top_frame = Frame(master)
         self.top_frame.pack(fill='x', pady=10)
-
         self.load_button1 = Button(self.top_frame, text="Load Spreadsheet 1", command=lambda: self.load_spreadsheet(1), bg='green')
-        # self.load_button1.grid(row=0, column=0, sticky='ew', padx=5)
-
         self.load_button2 = Button(self.top_frame, text="Load Spreadsheet 2", command=lambda: self.load_spreadsheet(2), state=DISABLED)
-        # self.load_button2.grid(row=1, column=0, sticky='ew', padx=5)
-
         self.variable1 = StringVar(master)
         self.variable1.set("Select matching column from 1...")
         self.dropdown1 = OptionMenu(self.top_frame, self.variable1, '')
         self.dropdown1.config(state=DISABLED)
-        # self.dropdown1.grid(row=0, column=1, sticky='ew', padx=5)
-
         self.variable2 = StringVar(master)
         self.variable2.set("Select matching column from 2...")
         self.dropdown2 = OptionMenu(self.top_frame, self.variable2, '')
         self.dropdown2.config(state=DISABLED)
-        # self.dropdown2.grid(row=1, column=1, sticky='ew', padx=5)
-
         self.match_button = Button(self.top_frame, text="Initiate Mapping Process", command=self.start_matching, state=DISABLED)
-        # self.match_button.grid(row=2, column=0, sticky='ew', padx=5)
-
         self.next_button = Button(self.top_frame, text="Map First Item", command=self.next_item, state=DISABLED)
-        # self.next_button.grid(row=2, column=1, sticky='ew', padx=5)
-
         # Top frame grid
         self.load_button1.grid(row=0, column=0, sticky='ew', padx=5, columnspan=2)
         self.load_button2.grid(row=1, column=0, sticky='ew', padx=5, columnspan=2)
@@ -57,7 +44,6 @@ class Application:
         self.dropdown2.grid(row=1, column=2, sticky='ew', padx=5)
         self.match_button.grid(row=2, column=0, sticky='ew', padx=5, columnspan=2)
         self.next_button.grid(row=2, column=2, sticky='ew', padx=5)
-
         self.top_frame.grid_columnconfigure(0, weight=1)
         self.top_frame.grid_columnconfigure(1, weight=1)
         self.top_frame.grid_columnconfigure(2, weight=1)
