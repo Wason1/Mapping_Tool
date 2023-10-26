@@ -20,6 +20,7 @@ class Application:
         self.next_item_index = 0
         self.selections = {}
         self.max_index = int(1)
+        self.current_item_var = StringVar()
 
         # Top frame for the buttons
         #region
@@ -37,6 +38,7 @@ class Application:
         self.dropdown2.config(state=DISABLED)
         self.match_button = Button(self.top_frame, text="Initiate Mapping Process", command=self.start_matching, state=DISABLED)
         self.next_button = Button(self.top_frame, text="Map First Item", command=self.next_item, state=DISABLED)
+        self.current_item_label = Label(self.top_frame, textvariable=self.current_item_var)
         # Top frame grid
         self.load_button1.grid(row=0, column=0, sticky='ew', padx=5, columnspan=2)
         self.load_button2.grid(row=1, column=0, sticky='ew', padx=5, columnspan=2)
@@ -44,6 +46,7 @@ class Application:
         self.dropdown2.grid(row=1, column=2, sticky='ew', padx=5)
         self.match_button.grid(row=2, column=0, sticky='ew', padx=5, columnspan=2)
         self.next_button.grid(row=2, column=2, sticky='ew', padx=5)
+        self.current_item_label.grid(row=3, column=1, sticky='w', padx=5)
         self.top_frame.grid_columnconfigure(0, weight=1)
         self.top_frame.grid_columnconfigure(1, weight=1)
         self.top_frame.grid_columnconfigure(2, weight=1)
@@ -242,6 +245,8 @@ class Application:
         if self.next_item_index < self.max_index:
             self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
             self.current_item_to_map = self.temp_row_df.loc[self.next_item_index, self.column1]
+            # Display the item you're matching
+            self.current_item_var.set(f'Current Item: {self.current_item_to_map}')
             # Display the row data in middle_left_frame
             self.display_dataframe_row(self.temp_row_df, self.middle_left_inner_frame)
             self.temp_df = self.fuzzy_logic_dataframe(self.current_item_to_map, self.matching_data_series )
@@ -323,44 +328,48 @@ class Application:
         self.master.destroy()
 
     def refresh(self):
-        # Reset variables
-        self.spreadsheet1 = None
-        self.spreadsheet2 = None
-        self.column1 = None
-        self.column2 = None
-        self.matches = []
-        self.next_item_index = 0
-        self.selections = {}
-        self.df_final = pd.DataFrame()
-        self.max_index = int(1)
+        self.master.destroy()
+        # # Reset variables
+        # self.spreadsheet1 = None
+        # self.spreadsheet2 = None
+        # self.column1 = None
+        # self.column2 = None
+        # self.matches = []
+        # self.next_item_index = 0
+        # self.selections = {}
+        # self.df_final = pd.DataFrame()
+        # self.max_index = int(1)
+        # self.current_item_to_map = StringVar()
+        # self.df3 = pd.DataFrame()
 
-        # Reset dropdowns
-        self.variable1.set("Select column...")
-        self.variable2.set("Select column...")
-        self.dropdown1.config(state=DISABLED, bg='SystemButtonFace')
-        self.dropdown2.config(state=DISABLED, bg='SystemButtonFace')
-        self.dropdown1['menu'].delete(0, 'end')
-        self.dropdown2['menu'].delete(0, 'end')
-        self.variable1.set("Select matching column from 1...")
-        self.variable2.set("Select matching column from 2...")
+        # # Reset dropdowns and text
+        # self.variable1.set("Select column...")
+        # self.variable2.set("Select column...")
+        # self.dropdown1.config(state=DISABLED, bg='SystemButtonFace')
+        # self.dropdown2.config(state=DISABLED, bg='SystemButtonFace')
+        # self.dropdown1['menu'].delete(0, 'end')
+        # self.dropdown2['menu'].delete(0, 'end')
+        # self.variable1.set("Select matching column from 1...")
+        # self.variable2.set("Select matching column from 2...")
+        # self.current_item_var.set("")
 
-        # Reset buttons
-        self.load_button1.config(text="Load Spreadsheet 1", bg='green', state=NORMAL)
-        self.load_button2.config(text="Load Spreadsheet 2", state=DISABLED, bg='SystemButtonFace')
-        self.match_button.config(text="Initiate Mapping Process", state=DISABLED, bg='SystemButtonFace')
-        self.next_button.config(text="First Item to Map", state=DISABLED, bg='SystemButtonFace')
-        self.save_button.config(text="Save Matches", state=DISABLED, bg='SystemButtonFace')
+        # # Reset buttons
+        # self.load_button1.config(text="Load Spreadsheet 1", bg='green', state=NORMAL)
+        # self.load_button2.config(text="Load Spreadsheet 2", state=DISABLED, bg='SystemButtonFace')
+        # self.match_button.config(text="Initiate Mapping Process", state=DISABLED, bg='SystemButtonFace')
+        # self.next_button.config(text="First Item to Map", state=DISABLED, bg='SystemButtonFace')
+        # self.save_button.config(text="Save Matches", state=DISABLED, bg='SystemButtonFace')
         
-        # Reset progress bar
-        self.progressbar["value"] = 0
-        self.progress_label.config(text="0%")
+        # # Reset progress bar
+        # self.progressbar["value"] = 0
+        # self.progress_label.config(text="0%")
 
-        # Clear the middle right frame
-        if self.middle_right_canvas.winfo_exists():
-            self.middle_right_canvas.delete("all")
+        # # Clear the middle right frame
+        # if self.middle_right_canvas.winfo_exists():
+        #     self.middle_right_canvas.delete("all")
 
-        if self.middle_left_canvas.winfo_exists():
-            self.middle_left_canvas.delete("all")
+        # if self.middle_left_canvas.winfo_exists():
+        #     self.middle_left_canvas.delete("all")
 
 root = tk.Tk()
 root.state('zoomed')  # To maximize the window
