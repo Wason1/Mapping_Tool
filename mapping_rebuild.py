@@ -192,12 +192,18 @@ class Application:
         self.matching_data_series = self.spreadsheet2[self.column2]
         self.df_final = pd.DataFrame()
 
-    def fuzzy_logic_dataframe(self, input_string, series):
+    def fuzzy_logic_dataframe(self, input_string, series, first_word_weight=1.5):
         # Calculate similarity scores
         sort_scores = series.apply(lambda x: fuzz.token_sort_ratio(input_string, x))
         set_scores = series.apply(lambda x: fuzz.token_set_ratio(input_string, x))
-        # Take the maximum of the two scores
-        max_scores = pd.Series([max(a, b) for a, b in zip(sort_scores, set_scores)])
+        
+        # Calculate first word scores
+        first_word_input = input_string.split()[0] if input_string.split() else ""
+        first_word_scores = series.apply(lambda x: fuzz.ratio(first_word_input, x.split()[0] if x.split() else "") if first_word_input else 0)
+        
+        # Take the maximum of the two scores and add the weighted first word score
+        max_scores = pd.Series([max(a, b) + first_word_weight * c for a, b, c in zip(sort_scores, set_scores, first_word_scores)])
+
         # Create a dataframe
         df = pd.DataFrame({
             'Value': series,
