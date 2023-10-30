@@ -101,7 +101,6 @@ class Application:
         # Configure the canvas scroll region whenever the inner frame size changes.
         self.middle_left_inner_frame.bind('<Configure>', lambda e: self.middle_left_canvas.configure(scrollregion=self.middle_left_canvas.bbox("all")))
         self.middle_right_inner_frame.bind('<Configure>', lambda e: self.middle_right_canvas.configure(scrollregion=self.middle_right_canvas.bbox("all")))
-
         #endregion
 
         # Bottom Frame for reset, close, progress bar
@@ -113,8 +112,8 @@ class Application:
         self.progressbar.pack(fill='x')
         self.progress_label = Label(self.bottom_frame, text="")
         self.progress_label.pack(fill='x')
-        self.refresh_button = Button(self.bottom_frame, text="Reset", command=self.refresh)
-        self.refresh_button.pack(fill='x')
+        # self.refresh_button = Button(self.bottom_frame, text="Reset", command=self.refresh)
+        # self.refresh_button.pack(fill='x')
         self.save_button = Button(self.bottom_frame, text="Save Matches", command=self.save_selections, state=DISABLED)
         self.save_button.pack(fill='x')
         self.close_button = Button(self.bottom_frame, text="Close", command=self.close_app)
@@ -327,8 +326,8 @@ class Application:
     def close_app(self):
         self.master.destroy()
 
-    def refresh(self):
-        self.master.destroy()
+    # def refresh(self):
+    #     self.master.destroy()
         # # Reset variables
         # self.spreadsheet1 = None
         # self.spreadsheet2 = None
