@@ -238,7 +238,7 @@ class Application:
             self.temp_row_df = self.spreadsheet1.iloc[[self.next_item_index]]
             self.current_item_to_map = self.temp_row_df.loc[self.next_item_index, self.column1]
             # Display the item you're matching
-            self.current_item_var.set(f'Current Item: {self.current_item_to_map}')
+            self.current_item_var.set(f'{self.current_item_to_map}')
             # Display the row data in middle_left_frame
             self.display_dataframe_row(self.temp_row_df, self.middle_left_inner_frame)
             self.temp_df = self.fuzzy_logic_dataframe(self.current_item_to_map, self.matching_data_series )
