@@ -401,36 +401,6 @@ class Application:
         else:
             messagebox.showerror("Error", "No matches to save.")
 
-    def display_df(self, df):
-        # Ensure the canvas is clean
-        self.current_item_left_canvas.delete("all")
-        
-        # Create a frame to hold the Treeview
-        df_frame = Frame(self.current_item_left_canvas)
-        
-        # Create a Treeview widget
-        tree = ttk.Treeview(df_frame)
-        tree.pack(fill='both', expand=True)
-
-        # Get column names and data
-        cols = df.columns.tolist()
-        data = df.values.tolist()
-
-        # Configure the Treeview columns
-        tree['columns'] = cols
-        for col in cols:
-            tree.heading(col, text=col)
-            tree.column(col, width=100)  # adjust width as needed
-
-        # Add data to the Treeview
-        for row in data:
-            tree.insert('', 'end', values=row)
-
-        # Add the frame to the canvas
-        self.current_item_left_canvas.create_window((0, 0), window=df_frame, anchor='nw')
-
-        # Update the canvas scrolling region
-        self.current_item_left_canvas.config(scrollregion=self.current_item_left_canvas.bbox("all"))
 
     
     def close_app(self):
