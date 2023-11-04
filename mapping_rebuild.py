@@ -38,7 +38,7 @@ class Application:
         self.dropdown2.config(state=DISABLED)
         self.match_button = Button(self.top_frame, text="Initiate Mapping Process", command=self.start_matching, state=DISABLED)
         self.next_button = Button(self.top_frame, text="Map First Item", command=self.next_item, state=DISABLED)
-        self.current_item_label = Label(self.top_frame, textvariable=self.current_item_var)
+        
         # Top frame grid
         self.load_button1.grid(row=0, column=0, sticky='ew', padx=5, columnspan=2)
         self.load_button2.grid(row=1, column=0, sticky='ew', padx=5, columnspan=2)
@@ -46,11 +46,57 @@ class Application:
         self.dropdown2.grid(row=1, column=2, sticky='ew', padx=5)
         self.match_button.grid(row=2, column=0, sticky='ew', padx=5, columnspan=2)
         self.next_button.grid(row=2, column=2, sticky='ew', padx=5)
-        self.current_item_label.grid(row=3, column=1, sticky='w', padx=5)
+        # self.current_item_label.grid(row=3, column=1, sticky='w', padx=5)
         self.top_frame.grid_columnconfigure(0, weight=1)
         self.top_frame.grid_columnconfigure(1, weight=1)
         self.top_frame.grid_columnconfigure(2, weight=1)
         #endregion
+
+
+
+        #Curent Item Frame
+        #region
+        self.current_item_frame = Frame(master, bd=1, relief='solid', height=100)
+        self.current_item_frame.grid_propagate(False)
+        self.current_item_frame.pack(fill='both', expand=True, pady=10)
+        #Left Frame
+        self.current_item_left_frame = Frame(self.current_item_frame, bd=1, relief='solid')
+        self.current_item_left_frame.pack(fill='both', expand=True, side='left', padx=5, pady=10)
+        self.current_item_left_canvas = Canvas(self.current_item_left_frame)
+        self.current_item_left_scrollbar = Scrollbar(self.current_item_left_frame, orient="vertical", command=self.current_item_left_canvas.yview)
+        self.current_item_left_scrollbar_horizontal = Scrollbar(self.current_item_left_frame, orient="horizontal", command=self.current_item_left_canvas.xview)
+        self.current_item_left_canvas.configure(yscrollcommand=self.current_item_left_scrollbar.set, xscrollcommand=self.current_item_left_scrollbar_horizontal.set)
+        self.current_item_left_canvas.grid(row=0, column=0, sticky="nsew")
+        self.current_item_left_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.current_item_left_scrollbar_horizontal.grid(row=1, column=0, sticky="ew")
+        self.current_item_left_frame.grid_rowconfigure(0, weight=1)
+        self.current_item_left_frame.grid_columnconfigure(0, weight=1)
+        self.current_item_left_inner_frame = Frame(self.current_item_left_canvas)
+        self.current_item_left_canvas.create_window((0, 0), window=self.current_item_left_inner_frame, anchor='nw')
+        self.current_item_left_inner_frame.bind('<Configure>', lambda e: self.current_item_left_canvas.configure(scrollregion=self.current_item_left_canvas.bbox("all")))        
+        #Right Frame
+        self.current_item_right_frame = Frame(self.current_item_frame, bd=1, relief='solid')
+        self.current_item_right_frame.pack(fill='both', expand=True, side='right', padx=5, pady=10)
+        self.current_item_right_canvas = Canvas(self.current_item_right_frame)
+        self.current_item_right_scrollbar = Scrollbar(self.current_item_right_frame, orient="vertical", command=self.current_item_right_canvas.yview)
+        self.current_item_right_scrollbar_horizontal = Scrollbar(self.current_item_right_frame, orient="horizontal", command=self.current_item_right_canvas.xview)
+        self.current_item_right_canvas.configure(yscrollcommand=self.current_item_right_scrollbar.set, xscrollcommand=self.current_item_right_scrollbar_horizontal.set)        
+        self.current_item_right_canvas.grid(row=0, column=0, sticky="nsew")
+        self.current_item_right_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.current_item_right_scrollbar_horizontal.grid(row=1, column=0, sticky="ew")
+        self.current_item_right_frame.grid_rowconfigure(0, weight=1)
+        self.current_item_right_frame.grid_columnconfigure(0, weight=1)
+        self.current_item_right_inner_frame = Frame(self.current_item_right_canvas)
+        self.current_item_label = Label(self.current_item_right_inner_frame, textvariable=self.current_item_var)
+        self.current_item_label.pack() 
+        self.current_item_right_canvas.create_window((0, 0), window=self.current_item_right_inner_frame, anchor='nw')
+        self.current_item_right_inner_frame.bind('<Configure>', lambda e: self.current_item_right_canvas.configure(scrollregion=self.current_item_right_canvas.bbox("all")))
+
+        # self.current_item_right_canvas.bind('<Configure>', lambda e: self.current_item_right_canvas.configure(scrollregion=self.current_item_right_canvas.bbox("all")))
+
+        #endregion
+
+        
 
         # Middle frame
         #region
@@ -101,6 +147,7 @@ class Application:
         # Configure the canvas scroll region whenever the inner frame size changes.
         self.middle_left_inner_frame.bind('<Configure>', lambda e: self.middle_left_canvas.configure(scrollregion=self.middle_left_canvas.bbox("all")))
         self.middle_right_inner_frame.bind('<Configure>', lambda e: self.middle_right_canvas.configure(scrollregion=self.middle_right_canvas.bbox("all")))
+        
 
         #endregion
 
@@ -242,8 +289,8 @@ class Application:
             # Display the row data in middle_left_frame
             self.display_dataframe_row(self.temp_row_df, self.middle_left_inner_frame)
             self.temp_df = self.fuzzy_logic_dataframe(self.current_item_to_map, self.matching_data_series )
-            self.temp_subset_df = self.temp_df.iloc[:50].copy()
-            self.temp_subset_df['IS_A_MATCH'] = 0
+            self.temp_subset_df = self.temp_df.iloc[:50].copy() # Take only the top 50 matches
+            self.temp_subset_df['IS_A_MATCH'] = 0 # create match column for later use
             self.temp_subset_df['spreadsheet_1_index'] = self.next_item_index
             self.temp_subset_df['spreadsheet_2_index'] = self.temp_subset_df.index
             self.temp_subset_df.reset_index(drop=True, inplace=True)
