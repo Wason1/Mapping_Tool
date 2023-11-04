@@ -131,28 +131,22 @@ class Application:
                     df = pd.read_csv(filepath)
                 else:
                     df = pd.read_excel(filepath)
-
                 if spreadsheet_number == 1:
                     df.columns = [col + '_1' for col in df.columns]
                     self.spreadsheet1 = df
                     self.load_button1.config(bg="white", text=filepath, state=DISABLED)
-
                     # Activate the 'load spreadsheet 2' button
                     self.load_button2.config(state=NORMAL, bg="green")  # This line makes the dropdown 2 button active
-
                     # Set dropdown column options for spreadsheet 1
                     self.update_dropdown(self.dropdown1, df.columns)
-
                 elif spreadsheet_number == 2:
                     df.columns = [col + '_2' for col in df.columns]
                     self.spreadsheet2 = df
                     self.load_button2.config(bg="white", text=filepath, state=DISABLED)
                     # Set dropdown column options for spreadsheet 2
                     self.update_dropdown(self.dropdown2, df.columns)
-                    
                     #activate dropdown button 1
                     self.dropdown1.config(state=NORMAL, bg="green")
-
             except Exception as e:
                 messagebox.showerror("Error", f"An error occurred while loading the file:\n{e}")
     
@@ -326,50 +320,6 @@ class Application:
     
     def close_app(self):
         self.master.destroy()
-
-    def refresh(self):
-        self.master.destroy()
-        # # Reset variables
-        # self.spreadsheet1 = None
-        # self.spreadsheet2 = None
-        # self.column1 = None
-        # self.column2 = None
-        # self.matches = []
-        # self.next_item_index = 0
-        # self.selections = {}
-        # self.df_final = pd.DataFrame()
-        # self.max_index = int(1)
-        # self.current_item_to_map = StringVar()
-        # self.df3 = pd.DataFrame()
-
-        # # Reset dropdowns and text
-        # self.variable1.set("Select column...")
-        # self.variable2.set("Select column...")
-        # self.dropdown1.config(state=DISABLED, bg='SystemButtonFace')
-        # self.dropdown2.config(state=DISABLED, bg='SystemButtonFace')
-        # self.dropdown1['menu'].delete(0, 'end')
-        # self.dropdown2['menu'].delete(0, 'end')
-        # self.variable1.set("Select matching column from 1...")
-        # self.variable2.set("Select matching column from 2...")
-        # self.current_item_var.set("")
-
-        # # Reset buttons
-        # self.load_button1.config(text="Load Spreadsheet 1", bg='green', state=NORMAL)
-        # self.load_button2.config(text="Load Spreadsheet 2", state=DISABLED, bg='SystemButtonFace')
-        # self.match_button.config(text="Initiate Mapping Process", state=DISABLED, bg='SystemButtonFace')
-        # self.next_button.config(text="First Item to Map", state=DISABLED, bg='SystemButtonFace')
-        # self.save_button.config(text="Save Matches", state=DISABLED, bg='SystemButtonFace')
-        
-        # # Reset progress bar
-        # self.progressbar["value"] = 0
-        # self.progress_label.config(text="0%")
-
-        # # Clear the middle right frame
-        # if self.middle_right_canvas.winfo_exists():
-        #     self.middle_right_canvas.delete("all")
-
-        # if self.middle_left_canvas.winfo_exists():
-        #     self.middle_left_canvas.delete("all")
 
 root = tk.Tk()
 root.state('zoomed')  # To maximize the window
