@@ -78,7 +78,6 @@ class Application:
         #Right Frame
         self.current_item_right_frame = Frame(self.current_item_frame, bd=1, relief='solid')
         self.current_item_right_frame.pack(fill='both', expand=True, side='right', padx=(10, 5), pady=10)
-        # self.current_item_right_frame.pack(fill='both', expand=True, side='right', padx=(2.5, 5), pady=10)
         self.current_item_right_canvas = Canvas(self.current_item_right_frame)
         self.current_item_right_scrollbar = Scrollbar(self.current_item_right_frame, orient="vertical", command=self.current_item_right_canvas.yview)
         self.current_item_right_scrollbar_horizontal = Scrollbar(self.current_item_right_frame, orient="horizontal", command=self.current_item_right_canvas.xview)
@@ -320,6 +319,9 @@ class Application:
                 self.middle_right_canvas.delete("all")
             if self.middle_left_canvas.winfo_exists():
                 self.middle_left_canvas.delete("all")
+        
+        # Display Mappings Dataframe
+        self.display_df(self.df_final)
 
     # New function to display rows from temp_subset_df with checkboxes in middle_right_frame
     def display_checkboxes(self, subset_df):
@@ -350,6 +352,38 @@ class Application:
         else:
             self.temp_subset_df.at[index, 'IS_A_MATCH'] = 0
 
+    # Display the mapping dataframe on the left top middle canvas
+    def display_df(self, df):
+        # Ensure the canvas is clean
+        self.current_item_left_canvas.delete("all")
+        
+        # Create a frame to hold the Treeview
+        df_frame = Frame(self.current_item_left_canvas)
+        
+        # Create a Treeview widget
+        tree = ttk.Treeview(df_frame)
+        tree.pack(fill='both', expand=True)
+
+        # Get column names and data
+        cols = df.columns.tolist()
+        data = df.values.tolist()
+
+        # Configure the Treeview columns
+        tree['columns'] = cols
+        for col in cols:
+            tree.heading(col, text=col)
+            tree.column(col, width=100)  # adjust width as needed
+
+        # Add data to the Treeview
+        for row in data:
+            tree.insert('', 'end', values=row)
+
+        # Add the frame to the canvas
+        self.current_item_left_canvas.create_window((0, 0), window=df_frame, anchor='nw')
+
+        # Update the canvas scrolling region
+        self.current_item_left_canvas.config(scrollregion=self.current_item_left_canvas.bbox("all"))
+
     def save_selections(self):
         # Save the selected matches to an Excel file
         if self.df_final is not None and len(self.df_final) > 0:
@@ -366,6 +400,38 @@ class Application:
                     os.startfile(filename)
         else:
             messagebox.showerror("Error", "No matches to save.")
+
+    def display_df(self, df):
+        # Ensure the canvas is clean
+        self.current_item_left_canvas.delete("all")
+        
+        # Create a frame to hold the Treeview
+        df_frame = Frame(self.current_item_left_canvas)
+        
+        # Create a Treeview widget
+        tree = ttk.Treeview(df_frame)
+        tree.pack(fill='both', expand=True)
+
+        # Get column names and data
+        cols = df.columns.tolist()
+        data = df.values.tolist()
+
+        # Configure the Treeview columns
+        tree['columns'] = cols
+        for col in cols:
+            tree.heading(col, text=col)
+            tree.column(col, width=100)  # adjust width as needed
+
+        # Add data to the Treeview
+        for row in data:
+            tree.insert('', 'end', values=row)
+
+        # Add the frame to the canvas
+        self.current_item_left_canvas.create_window((0, 0), window=df_frame, anchor='nw')
+
+        # Update the canvas scrolling region
+        self.current_item_left_canvas.config(scrollregion=self.current_item_left_canvas.bbox("all"))
+
     
     def close_app(self):
         self.master.destroy()
