@@ -20,6 +20,7 @@ class Application:
         self.next_item_index = 0
         self.selections = {}
         self.max_index = int(1)
+        # Current Item you're mapping
         self.current_item_var = StringVar()
 
         # Top frame for the buttons
@@ -72,7 +73,13 @@ class Application:
         self.current_item_left_scrollbar_horizontal.grid(row=1, column=0, sticky="ew")
         self.current_item_left_frame.grid_rowconfigure(0, weight=1)
         self.current_item_left_frame.grid_columnconfigure(0, weight=1)
+        # Create a frame to hold the Treeview, and place it within current_item_left_inner_frame
         self.current_item_left_inner_frame = Frame(self.current_item_left_canvas)
+        self.df_frame = Frame(self.current_item_left_inner_frame)
+        self.df_frame.pack(fill='both', expand=True)
+        # Create a Treeview widget
+        self.tree = ttk.Treeview(self.df_frame)
+        self.tree.pack(fill='both', expand=True)
         self.current_item_left_canvas.create_window((0, 0), window=self.current_item_left_inner_frame, anchor='nw')
         self.current_item_left_inner_frame.bind('<Configure>', lambda e: self.current_item_left_canvas.configure(scrollregion=self.current_item_left_canvas.bbox("all")))        
         #Right Frame
@@ -354,32 +361,23 @@ class Application:
 
     # Display the mapping dataframe on the left top middle canvas
     def display_df(self, df):
-        # Ensure the canvas is clean
-        self.current_item_left_canvas.delete("all")
-        
-        # Create a frame to hold the Treeview
-        df_frame = Frame(self.current_item_left_canvas)
-        
-        # Create a Treeview widget
-        tree = ttk.Treeview(df_frame)
-        tree.pack(fill='both', expand=True)
+        # Ensure the tree is clean
+        for row in self.tree.get_children():
+            self.tree.delete(row)
 
         # Get column names and data
         cols = df.columns.tolist()
         data = df.values.tolist()
 
         # Configure the Treeview columns
-        tree['columns'] = cols
+        self.tree['columns'] = cols
         for col in cols:
-            tree.heading(col, text=col)
-            tree.column(col, width=100)  # adjust width as needed
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=100)  # adjust width as needed
 
         # Add data to the Treeview
         for row in data:
-            tree.insert('', 'end', values=row)
-
-        # Add the frame to the canvas
-        self.current_item_left_canvas.create_window((0, 0), window=df_frame, anchor='nw')
+            self.tree.insert('', 'end', values=row)
 
         # Update the canvas scrolling region
         self.current_item_left_canvas.config(scrollregion=self.current_item_left_canvas.bbox("all"))
