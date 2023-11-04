@@ -113,8 +113,6 @@ class Application:
         self.progressbar.pack(fill='x')
         self.progress_label = Label(self.bottom_frame, text="")
         self.progress_label.pack(fill='x')
-        self.refresh_button = Button(self.bottom_frame, text="Reset", command=self.refresh)
-        self.refresh_button.pack(fill='x')
         self.save_button = Button(self.bottom_frame, text="Save Matches", command=self.save_selections, state=DISABLED)
         self.save_button.pack(fill='x')
         self.close_button = Button(self.bottom_frame, text="Close", command=self.close_app)
