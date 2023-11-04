@@ -56,12 +56,13 @@ class Application:
 
         #Curent Item Frame
         #region
-        self.current_item_frame = Frame(master, bd=1, relief='solid', height=100)
+        self.current_item_frame = Frame(master, bd=1, relief='solid')
         self.current_item_frame.grid_propagate(False)
         self.current_item_frame.pack(fill='both', expand=True, pady=10)
         #Left Frame
         self.current_item_left_frame = Frame(self.current_item_frame, bd=1, relief='solid')
-        self.current_item_left_frame.pack(fill='both', expand=True, side='left', padx=5, pady=10)
+        self.current_item_left_frame.pack(fill='both', expand=True, side='left', padx=(5, 10), pady=10)
+        # self.current_item_left_frame.pack(fill='both', expand=True, side='left', padx=(5, 2.5), pady=10)
         self.current_item_left_canvas = Canvas(self.current_item_left_frame)
         self.current_item_left_scrollbar = Scrollbar(self.current_item_left_frame, orient="vertical", command=self.current_item_left_canvas.yview)
         self.current_item_left_scrollbar_horizontal = Scrollbar(self.current_item_left_frame, orient="horizontal", command=self.current_item_left_canvas.xview)
@@ -76,7 +77,8 @@ class Application:
         self.current_item_left_inner_frame.bind('<Configure>', lambda e: self.current_item_left_canvas.configure(scrollregion=self.current_item_left_canvas.bbox("all")))        
         #Right Frame
         self.current_item_right_frame = Frame(self.current_item_frame, bd=1, relief='solid')
-        self.current_item_right_frame.pack(fill='both', expand=True, side='right', padx=5, pady=10)
+        self.current_item_right_frame.pack(fill='both', expand=True, side='right', padx=(10, 5), pady=10)
+        # self.current_item_right_frame.pack(fill='both', expand=True, side='right', padx=(2.5, 5), pady=10)
         self.current_item_right_canvas = Canvas(self.current_item_right_frame)
         self.current_item_right_scrollbar = Scrollbar(self.current_item_right_frame, orient="vertical", command=self.current_item_right_canvas.yview)
         self.current_item_right_scrollbar_horizontal = Scrollbar(self.current_item_right_frame, orient="horizontal", command=self.current_item_right_canvas.xview)
@@ -87,8 +89,8 @@ class Application:
         self.current_item_right_frame.grid_rowconfigure(0, weight=1)
         self.current_item_right_frame.grid_columnconfigure(0, weight=1)
         self.current_item_right_inner_frame = Frame(self.current_item_right_canvas)
-        self.current_item_label = Label(self.current_item_right_inner_frame, textvariable=self.current_item_var)
-        self.current_item_label.pack() 
+        self.current_item_right_label = Label(self.current_item_right_inner_frame, textvariable=self.current_item_var)
+        self.current_item_right_label.pack() 
         self.current_item_right_canvas.create_window((0, 0), window=self.current_item_right_inner_frame, anchor='nw')
         self.current_item_right_inner_frame.bind('<Configure>', lambda e: self.current_item_right_canvas.configure(scrollregion=self.current_item_right_canvas.bbox("all")))
 
@@ -106,9 +108,11 @@ class Application:
 
         # Middle frame's left and right frames
         self.middle_left_frame = Frame(self.middle_frame, bd=1, relief='solid')
-        self.middle_left_frame.pack(fill='both', expand=True, side='left', padx=5, pady=10)
+        self.middle_left_frame.pack(fill='both', expand=True, side='left', padx=(5, 0), pady=10)
+        # self.middle_left_frame.pack(fill='both', expand=True, side='left', padx=(5, 2.5), pady=10)
         self.middle_right_frame = Frame(self.middle_frame, bd=1, relief='solid')
-        self.middle_right_frame.pack(fill='both', expand=True, side='right', padx=5, pady=10)
+        self.middle_right_frame.pack(fill='both', expand=True, side='right', padx=(0, 5), pady=10)
+        # self.middle_right_frame.pack(fill='both', expand=True, side='right', padx=(2.5, 5), pady=10)
 
         # Canvas and Scrollbars for middle_right_frame
         self.middle_right_canvas = Canvas(self.middle_right_frame)
