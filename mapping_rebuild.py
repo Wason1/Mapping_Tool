@@ -67,6 +67,7 @@ class Application:
         self.current_item_left_canvas = Canvas(self.current_item_left_frame)
         self.current_item_left_scrollbar = Scrollbar(self.current_item_left_frame, orient="vertical", command=self.current_item_left_canvas.yview)
         self.current_item_left_scrollbar_horizontal = Scrollbar(self.current_item_left_frame, orient="horizontal", command=self.current_item_left_canvas.xview)
+        # self.current_item_left_canvas.config(scrollregion=self.current_item_left_canvas.bbox("all"))
         self.current_item_left_canvas.configure(yscrollcommand=self.current_item_left_scrollbar.set, xscrollcommand=self.current_item_left_scrollbar_horizontal.set)
         self.current_item_left_canvas.grid(row=0, column=0, sticky="nsew")
         self.current_item_left_scrollbar.grid(row=0, column=1, sticky="ns")
@@ -378,9 +379,6 @@ class Application:
         # Add data to the Treeview
         for row in data:
             self.tree.insert('', 'end', values=row)
-
-        # Update the canvas scrolling region
-        self.current_item_left_canvas.config(scrollregion=self.current_item_left_canvas.bbox("all"))
 
     def save_selections(self):
         # Save the selected matches to an Excel file
