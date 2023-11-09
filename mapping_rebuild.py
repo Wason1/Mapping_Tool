@@ -247,8 +247,16 @@ class Application:
         # Calculate similarity scores
         sort_scores = series.apply(lambda x: fuzz.token_sort_ratio(input_string, x))
         set_scores = series.apply(lambda x: fuzz.token_set_ratio(input_string, x))
-        # Take the maximum of the two scores
-        max_scores = pd.Series([max(a, b) for a, b in zip(sort_scores, set_scores)])
+
+        # Check for first word match and apply additional weight
+        first_word_weight = 1.2  # Define a weight for matching the first word
+        first_word_scores = series.apply(
+            lambda x: first_word_weight if x.lower().split()[0] == input_string.lower().split()[0] else 1
+        )
+
+        # Weight the maximum score with the first word match
+        max_scores = pd.Series([max(a, b) * w for a, b, w in zip(sort_scores, set_scores, first_word_scores)])
+
         # Create a dataframe
         df = pd.DataFrame({
             'Value': series,
