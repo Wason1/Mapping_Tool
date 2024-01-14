@@ -53,8 +53,6 @@ class Application:
         self.top_frame.grid_columnconfigure(2, weight=1)
         #endregion
 
-
-
         #Curent Item Frame
         #region
         self.current_item_frame = Frame(master, bd=1, relief='solid')
@@ -100,13 +98,9 @@ class Application:
         self.current_item_right_label.pack() 
         self.current_item_right_canvas.create_window((0, 0), window=self.current_item_right_inner_frame, anchor='nw')
         self.current_item_right_inner_frame.bind('<Configure>', lambda e: self.current_item_right_canvas.configure(scrollregion=self.current_item_right_canvas.bbox("all")))
-
         # self.current_item_right_canvas.bind('<Configure>', lambda e: self.current_item_right_canvas.configure(scrollregion=self.current_item_right_canvas.bbox("all")))
-
         #endregion
-
-        
-
+  
         # Middle frame
         #region
         # Middle frame with a border
@@ -159,7 +153,6 @@ class Application:
         self.middle_left_inner_frame.bind('<Configure>', lambda e: self.middle_left_canvas.configure(scrollregion=self.middle_left_canvas.bbox("all")))
         self.middle_right_inner_frame.bind('<Configure>', lambda e: self.middle_right_canvas.configure(scrollregion=self.middle_right_canvas.bbox("all")))
         
-
         #endregion
 
         # Bottom Frame for reset, close, progress bar
@@ -390,7 +383,6 @@ class Application:
         for index, row in df.iterrows():
             self.tree.insert('', 'end', values=(row[self.column1], row[self.column2]), iid=index)
 
-
     def save_selections(self):
         # Save the selected matches to an Excel file
         if self.df_final is not None and len(self.df_final) > 0:
@@ -408,8 +400,6 @@ class Application:
         else:
             messagebox.showerror("Error", "No matches to save.")
 
-
-    
     def close_app(self):
         self.master.destroy()
 
