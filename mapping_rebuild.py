@@ -374,19 +374,22 @@ class Application:
         for row in self.tree.get_children():
             self.tree.delete(row)
 
-        # Get column names and data
-        cols = df.columns.tolist()
-        data = df.values.tolist()
-
-        # Configure the Treeview columns
+        # Get only the matching columns
+        cols = [self.column1, self.column2]
         self.tree['columns'] = cols
+
+        # Configure the 'tree' column (column '#0') to not take up space
+        self.tree.column("#0", width=0, stretch=tk.NO)
+
+        # Configure your columns
         for col in cols:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100)  # adjust width as needed
+            self.tree.column(col, width=150, stretch=tk.NO)
 
-        # Add data to the Treeview
-        for row in data:
-            self.tree.insert('', 'end', values=row)
+        # Add data to the Treeview, only the two columns
+        for index, row in df.iterrows():
+            self.tree.insert('', 'end', values=(row[self.column1], row[self.column2]), iid=index)
+
 
     def save_selections(self):
         # Save the selected matches to an Excel file
